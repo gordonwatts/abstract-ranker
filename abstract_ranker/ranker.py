@@ -1,13 +1,16 @@
 import csv
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Generator, Optional, Tuple
 
 import openai
+import pytz
 import requests
 import yaml
 from joblib import Memory
 from pydantic import BaseModel
+from tzlocal import get_localzone
 
 # Config items
 CACHE_DIR = Path("./.abstract_cache")
@@ -16,6 +19,41 @@ memory_openapi = Memory(CACHE_DIR / "openapi", verbose=0)
 
 
 # Some classes to help us out.
+class IndicoDate(BaseModel):
+    "A date in the indico system"
+    # The date
+    date: str
+
+    # The time
+    time: str
+
+    # The timezone
+    tz: str
+
+    def get_local_datetime(self) -> Tuple[str, str]:
+        """Returns the date and time in the local timezone, taking into account
+        `self.tz` and `self.date` and `self.time`.
+
+        Returns:
+            Tuple[str, str]: The date and time in the local timezone.
+        """
+        # Get the talk timezone offset and the proper time for the talk.
+        talk_timezone = pytz.timezone(self.tz)
+        now = datetime.now(talk_timezone)
+        timezone_offset = now.strftime("%z")
+
+        talk_time = datetime.strptime(
+            f"{self.date} {self.time} {timezone_offset}", "%Y-%m-%d %H:%M:%S %z"
+        )
+
+        # Now, create that in local time.
+        local_talk_time = talk_time.astimezone(get_localzone())
+
+        local_date = local_talk_time.strftime("%Y-%m-%d")
+        local_time = local_talk_time.strftime("%I:%M:%S %p")
+        return local_date, local_time
+
+
 class Contribution(BaseModel):
     "And indico contribution"
     # Title of the talk
@@ -26,6 +64,12 @@ class Contribution(BaseModel):
 
     # Poster, plenary, etc.
     type: Optional[str]
+
+    # Start date of the talk
+    startDate: Optional[IndicoDate]
+
+    # End date of the talk
+    endDate: Optional[IndicoDate]
 
 
 @memory_indico.cache
@@ -190,7 +234,16 @@ Here is the talk title and Abstract:"""
 
         # Write the header row
         writer.writerow(
-            ["Title", "Summary", "Experiment", "Keywords", "Interest", "Type"]
+            [
+                "Date",
+                "Time",
+                "Title",
+                "Summary",
+                "Experiment",
+                "Keywords",
+                "Interest",
+                "Type",
+            ]
         )
 
         # Iterate over the contributions and write each row
@@ -204,6 +257,16 @@ Here is the talk title and Abstract:"""
                 # Write the row to the CSV file
                 writer.writerow(
                     [
+                        (
+                            contrib.startDate.get_local_datetime()[0]
+                            if contrib.startDate
+                            else ""
+                        ),
+                        (
+                            contrib.startDate.get_local_datetime()[1]
+                            if contrib.startDate
+                            else ""
+                        ),
                         contrib.title,
                         safe_get(summary, "summary"),
                         safe_get(summary, "experiment"),

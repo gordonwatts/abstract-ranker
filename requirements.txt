@@ -4,3 +4,5 @@ pydantic
 openai
 yaml
 pyyaml
+pytz
+tzlocal
