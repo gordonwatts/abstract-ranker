@@ -1,0 +1,6 @@
+joblib
+requests
+pydantic
+openai
+yaml
+pyyaml
