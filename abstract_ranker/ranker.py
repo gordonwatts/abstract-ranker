@@ -71,6 +71,9 @@ class Contribution(BaseModel):
     # End date of the talk
     endDate: Optional[IndicoDate]
 
+    # The room
+    roomFullname: Optional[str]
+
 
 @memory_indico.cache
 def _load_indico_json(node: str, meeting_id: str) -> Dict[str, Any]:
@@ -225,6 +228,16 @@ Here is the talk title and Abstract:"""
         else:
             return ""
 
+    def as_a_number(interest):
+        if interest == "high":
+            return 3
+        elif interest == "medium":
+            return 2
+        elif interest == "low":
+            return 1
+        else:
+            return 0
+
     # Define the CSV file path
     csv_file = "abstract_summary.csv"
 
@@ -237,6 +250,7 @@ Here is the talk title and Abstract:"""
             [
                 "Date",
                 "Time",
+                "Room",
                 "Title",
                 "Summary",
                 "Experiment",
@@ -267,11 +281,12 @@ Here is the talk title and Abstract:"""
                             if contrib.startDate
                             else ""
                         ),
+                        contrib.roomFullname if contrib.roomFullname else "",
                         contrib.title,
                         safe_get(summary, "summary"),
                         safe_get(summary, "experiment"),
                         safe_get(summary, "keywords"),
-                        safe_get(summary, "interest"),
+                        as_a_number(safe_get(summary, "interest")),
                         contrib.type,
                     ]
                 )
