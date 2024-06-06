@@ -32,13 +32,8 @@ Source = "https://github.com/gordonwatts/abstract-ranker"
 [tool.hatch.build.targets.wheel]
 packages = ["abstract_ranker"]
 
-[tool.hatch.envs.dev]
-dependencies = [
-  "mypy>=1.0.0",
-  "pytest>=6.0.0",
-  "black>=21.0.0",
-  "flake8>=4.0.0",
-]
+[project.optional-dependencies]
+test = ["pytest", "black", "flake8"]
 
 [tool.hatch.envs.dev.scripts]
 check = "mypy --install-types --non-interactive {args:abstract_ranker tests}"
