@@ -168,6 +168,7 @@ if __name__ == "__main__":
 
     # Define a command-line parser.
     parser = argparse.ArgumentParser(description="Abstract Ranker")
+    parser.set_defaults(func=lambda _: parser.print_usage())
 
     subparsers = parser.add_subparsers(dest="command", help="sub-command help")
 
