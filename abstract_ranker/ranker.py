@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from abstract_ranker.indico import IndicoDate, load_indico_json
 from abstract_ranker.openai_utils import query_gpt
+import argparse
 
 
 class Contribution(BaseModel):
@@ -122,10 +123,9 @@ def process_contributions(event_url: str, csv_file: str, prompt: str) -> None:
     print(f"CSV file '{csv_file}' has been created.")
 
 
-if __name__ == "__main__":
-
+def cmd_rank(args):
     # Example usage
-    event_url = "https://indico.cern.ch/event/1330797/contributions/"
+    event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
     csv_file = "abstract_summary.csv"
     prompt = """I am an expert in experimental particle physics as well as computing for
     particle physics. You are my expert AI assistant who is well versed in particle physics
@@ -162,3 +162,21 @@ if __name__ == "__main__":
     Here is the talk title and Abstract:"""
 
     process_contributions(event_url, csv_file, prompt)
+
+
+if __name__ == "__main__":
+
+    # Define a command-line parser.
+    parser = argparse.ArgumentParser(description="Abstract Ranker")
+
+    subparsers = parser.add_subparsers(dest="command", help="sub-command help")
+
+    rank_parser = subparsers.add_parser("rank", help="Rank contributions")
+    rank_parser.add_argument("indico_url", type=str, help="URL of the indico event")
+    rank_parser.set_defaults(func=cmd_rank)
+
+    args = parser.parse_args()
+
+    # Next, call the appropriate command function.
+    func = args.func
+    func(args)
