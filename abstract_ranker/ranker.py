@@ -5,8 +5,7 @@ from typing import Any, Dict, Generator, Optional
 from pydantic import BaseModel
 
 from abstract_ranker.indico import IndicoDate, load_indico_json
-from abstract_ranker.llm_utils import get_llm_models
-from abstract_ranker.openai_utils import query_gpt
+from abstract_ranker.llm_utils import get_llm_models, query_llm
 import argparse
 
 from abstract_ranker.utils import generate_ranking_csv_filename
@@ -96,7 +95,7 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
         # Iterate over the contributions and write each row
         for contrib in contributions(data):
             if not (contrib.description is None or len(contrib.description) < 10):
-                summary = query_gpt(
+                summary = query_llm(
                     prompt,
                     {"title": contrib.title, "abstract": contrib.description},
                     model,
@@ -201,7 +200,11 @@ if __name__ == "__main__":
     # set the logging level to DEBUG.
     if args.v == 1:
         logging.basicConfig(level=logging.INFO)
-    elif args.v >= 2:
+    elif args.v == 2:
+        logging.basicConfig(level=logging.DEBUG)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logging.getLogger("httpcore").setLevel(logging.WARNING)
+    elif args.v >= 3:
         logging.basicConfig(level=logging.DEBUG)
 
     # Next, call the appropriate command function.
