@@ -19,11 +19,19 @@ def create_pipeline(model_name: str):
         Pipeline: The text generation pipeline.
     """
 
-    from transformers import pipeline
-
     if model_name not in _hf_models:
+        from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+
+        model = AutoModelForCausalLM.from_pretrained(
+            "microsoft/Phi-3-mini-4k-instruct",
+            device_map="cuda",
+            torch_dtype="auto",
+            trust_remote_code=True,
+        )
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
+
         _hf_models[model_name] = pipeline(
-            "text-generation", model=model_name, trust_remote_code=True
+            "text-generation", model=model, tokenizer=tokenizer
         )
 
     return _hf_models[model_name]
@@ -47,9 +55,13 @@ Abstract: {context["abstract"]}"""
 
     messages = [
         {
-            "role": "All of your answers will be parsed by a yaml parser. "
+            "role": "system",
+            "content": "All of your answers will be parsed by a yaml parser. "
             "Format answer as yaml (all output must be yaml). If the user gives you a template"
             " for the yaml, please use that (it will be in between ```yaml <template> ```.",
+        },
+        {
+            "role": "user",
             "content": content,
         },
     ]
@@ -58,7 +70,15 @@ Abstract: {context["abstract"]}"""
     pipe = create_pipeline(model_name)
 
     logger.debug("Running the pipeline")
-    result = pipe(messages)
-    logging.info(f"Result from hf inference for {context['title']}: {result}")
+    generation_args = {
+        "max_new_tokens": 600,
+        "return_full_text": False,
+        "temperature": 0.3,
+        "do_sample": False,
+    }
+    full_result = pipe(messages, **generation_args)
+    logger.debug(f"Result from hf inference for {context['title']}: {full_result}")
+    result = full_result[0]["generated_text"]
     assert isinstance(result, str)
+    logger.info(f"Text from hf LLM for {context['title']}: {result}")
     return result
