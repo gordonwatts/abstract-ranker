@@ -187,9 +187,22 @@ if __name__ == "__main__":
         choices=get_llm_models(),
         default="GPT4o",
     )
+    rank_parser.add_argument(
+        "-v",
+        action="count",
+        default=0,
+        help="Increase output verbosity",
+    )
     rank_parser.set_defaults(func=cmd_rank)
 
     args = parser.parse_args()
+
+    # Turn on logging. If the verbosity is 1, set the logging level to INFO. If the verbosity is 2,
+    # set the logging level to DEBUG.
+    if args.v == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif args.v >= 2:
+        logging.basicConfig(level=logging.DEBUG)
 
     # Next, call the appropriate command function.
     func = args.func
