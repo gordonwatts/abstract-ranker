@@ -185,7 +185,7 @@ if __name__ == "__main__":
         type=str,
         help="GPT model to use",
         choices=get_llm_models(),
-        default="GPT4Turbo",
+        default="GPT4o",
     )
     rank_parser.set_defaults(func=cmd_rank)
 
