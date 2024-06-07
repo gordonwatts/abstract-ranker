@@ -1,7 +1,12 @@
 {
   "cSpell.words": [
     "indico",
+    "joblib",
     "localzone",
-    "openai"
+    "openai",
+    "pydantic",
+    "pytz",
+    "SUSY",
+    "tzlocal"
   ]
 }

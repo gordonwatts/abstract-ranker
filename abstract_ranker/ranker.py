@@ -1,57 +1,11 @@
 import csv
-import re
-from datetime import datetime
-from pathlib import Path
-from typing import Any, Dict, Generator, Optional, Tuple
+from typing import Any, Dict, Generator, Optional
 
-import openai
-import pytz
-import requests
-import yaml
-from joblib import Memory
 from pydantic import BaseModel
-from tzlocal import get_localzone
 
-# Config items
-CACHE_DIR = Path("./.abstract_cache")
-memory_indico = Memory(CACHE_DIR / "indico", verbose=0)
-memory_openapi = Memory(CACHE_DIR / "openapi", verbose=0)
-
-
-# Some classes to help us out.
-class IndicoDate(BaseModel):
-    "A date in the indico system"
-    # The date
-    date: str
-
-    # The time
-    time: str
-
-    # The timezone
-    tz: str
-
-    def get_local_datetime(self) -> Tuple[str, str]:
-        """Returns the date and time in the local timezone, taking into account
-        `self.tz` and `self.date` and `self.time`.
-
-        Returns:
-            Tuple[str, str]: The date and time in the local timezone.
-        """
-        # Get the talk timezone offset and the proper time for the talk.
-        talk_timezone = pytz.timezone(self.tz)
-        now = datetime.now(talk_timezone)
-        timezone_offset = now.strftime("%z")
-
-        talk_time = datetime.strptime(
-            f"{self.date} {self.time} {timezone_offset}", "%Y-%m-%d %H:%M:%S %z"
-        )
-
-        # Now, create that in local time.
-        local_talk_time = talk_time.astimezone(get_localzone())
-
-        local_date = local_talk_time.strftime("%Y-%m-%d")
-        local_time = local_talk_time.strftime("%I:%M:%S %p")
-        return local_date, local_time
+from abstract_ranker.indico import IndicoDate, load_indico_json
+from abstract_ranker.openai_utils import query_gpt
+import argparse
 
 
 class Contribution(BaseModel):
@@ -75,59 +29,6 @@ class Contribution(BaseModel):
     roomFullname: Optional[str]
 
 
-@memory_indico.cache
-def _load_indico_json(node: str, meeting_id: str) -> Dict[str, Any]:
-    """Loads and returns the JSON info for an indico meeting.
-
-    Args:
-        node (str): The url stem for the indico instance we will access
-        meeting_id (str): The meeting ID for the meeting we want to access
-
-    Returns:
-        _type_: The JSON data for the meeting
-    """
-
-    url = f"{node}/export/event/{meeting_id}.json?detail=contributions"
-
-    # Make the request to the URL
-    response = requests.get(url)
-    return response.json()["results"][0]
-
-
-def parse_indico_url(event_url: str) -> Tuple[str, str]:
-    """Parses the indico event URL and extracts the node and meeting ID.
-
-    Args:
-        event_url (str): The URL of the indico event.
-
-    Returns:
-        Tuple[str, str]: The node and meeting ID extracted from the URL.
-    """
-    pattern = r"(https?://[^/]+)/event/(\d+)/"
-    match = re.search(pattern, event_url)
-    if match:
-        node = match.group(1)
-        meeting_id = match.group(2)
-        return node, meeting_id
-    else:
-        raise ValueError("Invalid indico event URL")
-
-
-def load_indico_json(event_url: str) -> Dict[str, Any]:
-    """Returns the json for a url from any indico instance
-
-    Args:
-        event_url (str): The URL of anything in the meeting
-
-    Returns:
-        Dict[str, Any]: The info for the meeting
-    """
-
-    # Example usage
-    node, meeting_id = parse_indico_url(event_url)
-    return _load_indico_json(node, meeting_id)  # type: ignore
-
-
 def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, None]:
     """Yields the contributions from the event data.
 
@@ -141,86 +42,16 @@ def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, N
         yield Contribution(**contrib)
 
 
-openai_client = openai.OpenAI(api_key=Path(".openai_key").read_text().strip())
-
-
-@memory_openapi.cache
-def query_gpt(prompt: str, context: Dict[str, str]) -> dict:
-    """Queries OpenAI GPT-3.5 Turbo with a prompt and context.
+def process_contributions(event_url: str, csv_file: str, prompt: str) -> None:
+    """
+    Process contributions from the event URL and write them to a CSV file.
 
     Args:
-        prompt (str): The prompt for the query.
-        context (str): The context for the query.
-
-    Returns:
-        dict: The parsed YAML response from OpenAI.
+        event_url (str): The URL of the event.
+        csv_file (str): The path to the CSV file.
+        prompt (str): The prompt for summarizing the abstracts.
     """
-    # Build context:
-    c_text = f"""Title: {context['title']}
-Abstract: {context['abstract']}"""
-
-    # Generate the completion using OpenAI GPT-3.5 Turbo
-    response = openai_client.chat.completions.create(
-        # model="gpt-3.5-turbo",
-        model="gpt-4-turbo-preview",
-        messages=[
-            {
-                "role": "system",
-                "content": prompt,
-            },
-            {"role": "user", "content": prompt},
-            {"role": "user", "content": c_text},
-        ],
-        max_tokens=1000,
-        temperature=0.7,
-        n=1,
-        stop=None,
-    )
-
-    # Parse the YAML response
-    r = response.choices[0].message.content
-    if r is not None:
-        parsed_response = yaml.safe_load(r)
-    else:
-        parsed_response = {
-            "summary:": "No response from GPT-3.5 Turbo.",
-            "experiment": "",
-        }
-
-    return parsed_response
-
-
-if __name__ == "__main__":
-    # Example usage
-    event_url = "https://indico.cern.ch/event/1330797/contributions/"
     data = load_indico_json(event_url)
-    prompt = """I am an expert in experimental particle physics as well as computing for
- particle physics. You are my expert AI assistant who is well versed in particle physics
- and particle physics computing. My interests are in the following areas:
-    1. Hidden Sector Physics
-    2. Long Lived Particles (Exotics or RPV SUSY)
-    3. Analysis techniques and methods and frameworks, particularly those based around python or ROOT's DataFrame (RDF)
-    4. Machine Learning and AI for particle physics
-    5. Distributed computing for analysis (e.g. Dask, Spark, etc)
-    6. Data Preservation and FAIR principles
-    7. Differentiable Programming
-
-I'm not very interested in:
-    1. Quantum Computing
-    2. Lattice QCD
-    3. Neutrino Physics
-
-Please summarize this conference abstract so I can quickly judge the abstract and if I want to
-see the talk it represents. 
-
-Your reply should have the following format:
-
-summary: <One line, terse, summary of the abstract that does not repeat the title. It should add extra information beyond the title, and should mention any key outcomes that are present in the abstract>
-experiment: <If you can guess the experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here. Otherwise blank.>
-keywords: <comma separated list of keywords that match my interest list above. If you can't find any, leave blank.>
-interest: <If you can guess how interested I am from above, put "low", "medium", or "high" here. Otherwise blank.>
-
-Here is the talk title and Abstract:"""
 
     def safe_get(d, key):
         if key in d:
@@ -237,9 +68,6 @@ Here is the talk title and Abstract:"""
             return 1
         else:
             return 0
-
-    # Define the CSV file path
-    csv_file = "abstract_summary.csv"
 
     # Open the CSV file in write mode
     with open(csv_file, mode="w", newline="") as file:
@@ -293,3 +121,63 @@ Here is the talk title and Abstract:"""
 
     # Print a message indicating the CSV file has been created
     print(f"CSV file '{csv_file}' has been created.")
+
+
+def cmd_rank(args):
+    # Example usage
+    event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
+    csv_file = "abstract_summary.csv"
+    prompt = """I am an expert in experimental particle physics as well as computing for
+    particle physics. You are my expert AI assistant who is well versed in particle physics
+    and particle physics computing. My interests are in the following areas:
+    1. Hidden Sector Physics
+    2. Long Lived Particles (Exotics or RPV SUSY)
+    3. Analysis techniques and methods and frameworks, particularly those based around python or
+       ROOT's DataFrame (RDF)
+    4. Machine Learning and AI for particle physics
+    5. Distributed computing for analysis (e.g. Dask, Spark, etc)
+    6. Data Preservation and FAIR principles
+    7. Differentiable Programming
+
+    I'm not very interested in:
+    1. Quantum Computing
+    2. Lattice QCD
+    3. Neutrino Physics
+
+    Please summarize this conference abstract so I can quickly judge the abstract and if I want to
+    see the talk it represents.
+
+    Your reply should have the following format:
+
+    summary: <One line, terse, summary of the abstract that does not repeat the title. It should
+              add extra information beyond the title, and should mention any key outcomes that are
+              present in the abstract>
+    experiment: <If you can guess the experiment this abstract is associated with (e.g. ATLAS, CMS,
+                 LHCb, etc), place it here. Otherwise blank.>
+    keywords: <comma separated list of keywords that match my interest list above. If you can't
+               find any, leave blank.>
+    interest: <If you can guess how interested I am from above, put "low", "medium", or "high"
+                here. Otherwise blank.>
+
+    Here is the talk title and Abstract:"""
+
+    process_contributions(event_url, csv_file, prompt)
+
+
+if __name__ == "__main__":
+
+    # Define a command-line parser.
+    parser = argparse.ArgumentParser(description="Abstract Ranker")
+    parser.set_defaults(func=lambda _: parser.print_usage())
+
+    subparsers = parser.add_subparsers(dest="command", help="sub-command help")
+
+    rank_parser = subparsers.add_parser("rank", help="Rank contributions")
+    rank_parser.add_argument("indico_url", type=str, help="URL of the indico event")
+    rank_parser.set_defaults(func=cmd_rank)
+
+    args = parser.parse_args()
+
+    # Next, call the appropriate command function.
+    func = args.func
+    func(args)
