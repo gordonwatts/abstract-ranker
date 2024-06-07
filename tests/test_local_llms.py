@@ -13,7 +13,7 @@ def test_hf():
             assert isinstance(msg, list)
             assert len(msg) == 1
             call_message = msg[0]
-            return "forking fork"
+            return [{'generated_text': }]
 
         mock_pipeline.return_value = call_back
 
