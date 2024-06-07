@@ -5,6 +5,7 @@ from typing import Any, Dict, Generator, Optional
 from pydantic import BaseModel
 
 from abstract_ranker.indico import IndicoDate, load_indico_json
+from abstract_ranker.llm_utils import get_llm_models
 from abstract_ranker.openai_utils import query_gpt
 import argparse
 
@@ -45,14 +46,14 @@ def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, N
         yield Contribution(**contrib)
 
 
-def process_contributions(event_url: str, prompt: str) -> None:
+def process_contributions(event_url: str, prompt: str, model: str) -> None:
     """
     Process contributions from the event URL and write them to a CSV file.
 
     Args:
         event_url (str): The URL of the event.
-        csv_file (str): The path to the CSV file.
         prompt (str): The prompt for summarizing the abstracts.
+        model(str): The LLM to use for summarization.
     """
     data = load_indico_json(event_url)
 
@@ -98,6 +99,7 @@ def process_contributions(event_url: str, prompt: str) -> None:
                 summary = query_gpt(
                     prompt,
                     {"title": contrib.title, "abstract": contrib.description},
+                    model,
                 )
 
                 # Write the row to the CSV file
@@ -164,7 +166,7 @@ def cmd_rank(args):
 
     Here is the talk title and Abstract:"""
 
-    process_contributions(event_url, prompt)
+    process_contributions(event_url, prompt, args.model)
 
 
 if __name__ == "__main__":
@@ -177,6 +179,14 @@ if __name__ == "__main__":
 
     rank_parser = subparsers.add_parser("rank", help="Rank contributions")
     rank_parser.add_argument("indico_url", type=str, help="URL of the indico event")
+    rank_parser.add_argument(
+        "--model",
+        "-m",
+        type=str,
+        help="GPT model to use",
+        choices=get_llm_models(),
+        default="GPT4Turbo",
+    )
     rank_parser.set_defaults(func=cmd_rank)
 
     args = parser.parse_args()

@@ -14,8 +14,8 @@ openai_client = openai.OpenAI(api_key=Path(".openai_key").read_text().strip())
 
 
 @memory_openapi.cache
-def query_gpt(prompt: str, context: Dict[str, str]) -> dict:
-    """Queries OpenAI GPT-3.5 Turbo with a prompt and context.
+def query_gpt(prompt: str, context: Dict[str, str], model: str) -> dict:
+    """Queries LLM `model` with a prompt and context.
 
     Args:
         prompt (str): The prompt for the query.
