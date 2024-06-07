@@ -3,7 +3,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-dependencies = ['pytz', 'joblib', 'pydantic', 'requests', 'tzlocal', 'openai']
+dependencies = [
+  'pytz',
+  'joblib',
+  'pydantic',
+  'requests',
+  'tzlocal',
+  'openai',
+  'yaml',
+]
 
 name = "conference-llm-tools"
 dynamic = ["version"]
