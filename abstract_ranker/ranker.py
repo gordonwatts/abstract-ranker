@@ -1,4 +1,5 @@
 import csv
+import logging
 from typing import Any, Dict, Generator, Optional
 
 from pydantic import BaseModel
@@ -6,6 +7,8 @@ from pydantic import BaseModel
 from abstract_ranker.indico import IndicoDate, load_indico_json
 from abstract_ranker.openai_utils import query_gpt
 import argparse
+
+from abstract_ranker.utils import generate_ranking_csv_filename
 
 
 class Contribution(BaseModel):
@@ -42,7 +45,7 @@ def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, N
         yield Contribution(**contrib)
 
 
-def process_contributions(event_url: str, csv_file: str, prompt: str) -> None:
+def process_contributions(event_url: str, prompt: str) -> None:
     """
     Process contributions from the event URL and write them to a CSV file.
 
@@ -70,6 +73,7 @@ def process_contributions(event_url: str, csv_file: str, prompt: str) -> None:
             return 0
 
     # Open the CSV file in write mode
+    csv_file = generate_ranking_csv_filename(data)
     with open(csv_file, mode="w", newline="") as file:
         writer = csv.writer(file)
 
@@ -120,13 +124,12 @@ def process_contributions(event_url: str, csv_file: str, prompt: str) -> None:
                 )
 
     # Print a message indicating the CSV file has been created
-    print(f"CSV file '{csv_file}' has been created.")
+    logging.info(f"CSV file '{csv_file}' has been created.")
 
 
 def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
-    csv_file = "abstract_summary.csv"
     prompt = """I am an expert in experimental particle physics as well as computing for
     particle physics. You are my expert AI assistant who is well versed in particle physics
     and particle physics computing. My interests are in the following areas:
@@ -161,7 +164,7 @@ def cmd_rank(args):
 
     Here is the talk title and Abstract:"""
 
-    process_contributions(event_url, csv_file, prompt)
+    process_contributions(event_url, prompt)
 
 
 if __name__ == "__main__":
