@@ -1,5 +1,8 @@
 {
   "cSpell.words": [
+    "filelock",
+    "httpcore",
+    "httpx",
     "huggingface",
     "indico",
     "joblib",

@@ -202,8 +202,8 @@ if __name__ == "__main__":
         logging.basicConfig(level=logging.INFO)
     elif args.v == 2:
         logging.basicConfig(level=logging.DEBUG)
-        logging.getLogger("httpx").setLevel(logging.WARNING)
-        logging.getLogger("httpcore").setLevel(logging.WARNING)
+        for p in ["httpx", "httpcore", "urllib3", "filelock"]:
+            logging.getLogger(p).setLevel(logging.WARNING)
     elif args.v >= 3:
         logging.basicConfig(level=logging.DEBUG)
 
