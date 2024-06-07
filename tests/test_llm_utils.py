@@ -14,4 +14,4 @@ def test_dispatch():
         assert r == "Mocked response"
 
         assert mock_query_gpt.call_count == 1
-        mock_query_gpt.assert_called_with(prompt, context, "gpt-4-turbo-preview")
+        mock_query_gpt.assert_called_with(prompt, context, "gpt-4-turbo")
