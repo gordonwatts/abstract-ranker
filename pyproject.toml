@@ -3,6 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
+dependencies = ['pytz', 'joblib', 'pydantic', 'requests']
+
 name = "conference-llm-tools"
 dynamic = ["version"]
 description = 'Tools to work with conferences in indico with LLMs as an assistant'
@@ -22,8 +24,6 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ['pytz', 'joblib', 'pydantic']
-
 [project.urls]
 Documentation = "https://github.com/gordonwatts/abstract-ranker#readme"
 Issues = "https://github.com/gordonwatts/abstract-ranker/issues"
