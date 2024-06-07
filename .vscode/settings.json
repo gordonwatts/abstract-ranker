@@ -1,7 +1,9 @@
 {
   "cSpell.words": [
+    "huggingface",
     "indico",
     "joblib",
+    "llms",
     "localzone",
     "openai",
     "pydantic",
