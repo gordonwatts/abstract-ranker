@@ -22,7 +22,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = ['pytz', 'joblib']
+dependencies = ['pytz', 'joblib', 'pydantic']
 
 [project.urls]
 Documentation = "https://github.com/gordonwatts/abstract-ranker#readme"
