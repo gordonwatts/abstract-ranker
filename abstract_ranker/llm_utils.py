@@ -1,5 +1,6 @@
 from typing import Dict, List
 
+from abstract_ranker.local_llms import query_hugging_face
 from abstract_ranker.openai_utils import query_gpt
 
 
@@ -7,6 +8,9 @@ _llm_dispatch = {
     "GPT4Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-4-turbo"),
     "GPT4o": lambda prompt, context: query_gpt(prompt, context, "gpt-4o"),
     "GPT35Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-3.5-turbo"),
+    "phi3-mini": lambda prompt, context: query_hugging_face(
+        prompt, context, "microsoft/Phi-3-mini-4k-instruct"
+    ),
 }
 
 

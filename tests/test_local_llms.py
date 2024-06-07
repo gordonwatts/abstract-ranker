@@ -1,4 +1,3 @@
-import logging
 from unittest.mock import patch
 
 from abstract_ranker.local_llms import query_hugging_face
