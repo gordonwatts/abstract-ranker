@@ -4,6 +4,11 @@ from typing import Any, Dict
 _hf_models: Dict[str, Any] = {}
 
 
+def reset():
+    """Use for testing - will trigger a clear of everything"""
+    _hf_models.clear()
+
+
 def create_pipeline(model_name: str):
     """Create the pipeline for text generation using the specified model.
 
