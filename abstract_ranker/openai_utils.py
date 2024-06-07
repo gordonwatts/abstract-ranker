@@ -10,8 +10,6 @@ from abstract_ranker.config import CACHE_DIR
 
 memory_openapi = Memory(CACHE_DIR / "openapi", verbose=0)
 
-openai_client = openai.OpenAI(api_key=Path(".openai_key").read_text().strip())
-
 
 @memory_openapi.cache
 def query_gpt(prompt: str, context: Dict[str, str], model: str) -> dict:
@@ -29,6 +27,7 @@ def query_gpt(prompt: str, context: Dict[str, str], model: str) -> dict:
 Abstract: {context['abstract']}"""
 
     # Generate the completion using OpenAI GPT-3.5 Turbo
+    openai_client = openai.OpenAI(api_key=Path(".openai_key").read_text().strip())
     response = openai_client.chat.completions.create(
         # model="gpt-3.5-turbo",
         model="gpt-4-turbo-preview",
