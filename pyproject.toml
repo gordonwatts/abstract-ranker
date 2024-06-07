@@ -10,7 +10,7 @@ dependencies = [
   'requests',
   'tzlocal',
   'openai',
-  'yaml',
+  'pyyaml',
 ]
 
 name = "conference-llm-tools"
