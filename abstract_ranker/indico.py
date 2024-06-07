@@ -77,7 +77,7 @@ def parse_indico_url(event_url: str) -> Tuple[str, str]:
     Returns:
         Tuple[str, str]: The node and meeting ID extracted from the URL.
     """
-    pattern = r"(https?://[^/]+)/event/(\d+)/"
+    pattern = r"(https?://[^/]+)/event/(\d+)/?"
     match = re.search(pattern, event_url)
     if match:
         node = match.group(1)

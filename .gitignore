@@ -160,4 +160,4 @@ cython_debug/
 #.idea/
 .openai_key
 .abstract_cache/*
-abstract_summary.csv
+*.csv
