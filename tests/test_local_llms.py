@@ -94,17 +94,17 @@ def test_hf_two_models():
 
                 pipeline_mock.return_value = call_back
 
-            # Call twice with different model names
-            _ = query_hugging_face(
-                "What is the summary?",
-                {"title": "Title", "abstract": "Abstract"},
-                "microsoft/Phi-3-mini-4k-instruct",
-            )
-            _ = query_hugging_face(
-                "What is the summary?",
-                {"title": "Title", "abstract": "Abstract"},
-                "microsoft/Phi-3-mini-4k-instruct_t",
-            )
+                # Call twice with different model names
+                _ = query_hugging_face(
+                    "What is the summary?",
+                    {"title": "Title", "abstract": "Abstract"},
+                    "microsoft/Phi-3-mini-4k-instruct",
+                )
+                _ = query_hugging_face(
+                    "What is the summary?",
+                    {"title": "Title", "abstract": "Abstract"},
+                    "microsoft/Phi-3-mini-4k-instruct_t",
+                )
 
         assert pipeline_mock.call_count == 2
         assert pipe_call_count == 2
