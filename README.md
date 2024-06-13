@@ -1,4 +1,5 @@
 # abstract-ranker
+
 Code to play with conference abstract ranking and classification
 
 ## Description
@@ -13,7 +14,7 @@ Using gpt 3.5 turbo cost pannies to do this, and 4 turbo cost about $1.60 US. I 
 
 ## Tyring it out
 
-The following is a way to use `phi-3` as an example:
+The following is a way to use `phi-3` mini as an example:
 
 ```bash
  python .\abstract_ranker\ranker.py rank https://indico.cern.ch/event/1330797/contributions --model phi3-mini -v
