@@ -29,7 +29,7 @@ def test_hf():
         mock_pipeline.assert_called_once_with("microsoft/Phi-3-mini-4k-instruct")
 
         assert call_message is not None
-        for item in call_message:
+        for item in call_message:  # type: ignore
             if item["role"] == "system":
                 assert item["content"].startswith("All of your answers will")
             elif item["role"] == "user":
