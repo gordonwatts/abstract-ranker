@@ -14,7 +14,7 @@ def test_hf():
             assert isinstance(msg, list)
             assert len(msg) == 2
             call_message = msg
-            return [{"generated_text": "forking fork"}]
+            return [{"generated_text": "test: forking fork"}]
 
         mock_pipeline.return_value = call_back
 
@@ -24,14 +24,58 @@ def test_hf():
             "microsoft/Phi-3-mini-4k-instruct",
         )
         # Check the result
-        assert result == "forking fork"
+        assert result == {"test": "forking fork"}
         # Check the call
         mock_pipeline.assert_called_once_with("microsoft/Phi-3-mini-4k-instruct")
 
         assert call_message is not None
         for item in call_message:  # type: ignore
             if item["role"] == "system":
-                assert item["content"].startswith("All of your answers will")
+                assert item["content"].startswith("You are my expert")
+            elif item["role"] == "user":
+                assert (
+                    item["content"]
+                    == """What is the summary?
+Title: Title
+Abstract: Abstract"""
+                )
+            else:
+                assert False, f"Unknown role: {item['role']}"
+
+
+def test_hf_md():
+    # Mock out the call to the transformers library pipeline call:
+    with patch("abstract_ranker.local_llms.create_pipeline") as mock_pipeline:
+        call_message: Optional[List[Dict[str, str]]] = None
+
+        def call_back(msg: List[Dict[str, str]], **kwargs) -> List[Dict[str, str]]:
+            nonlocal call_message
+            assert isinstance(msg, list)
+            assert len(msg) == 2
+            call_message = msg
+            return [
+                {
+                    "generated_text": " ```yaml\ntest: forking fork\n```\n\nThis is a bogus "
+                    "explanation it adds after the text"
+                }
+            ]
+
+        mock_pipeline.return_value = call_back
+
+        result = query_hugging_face(
+            "What is the summary?",
+            {"title": "Title", "abstract": "Abstract"},
+            "microsoft/Phi-3-mini-4k-instruct",
+        )
+        # Check the result
+        assert result == {"test": "forking fork"}
+        # Check the call
+        mock_pipeline.assert_called_once_with("microsoft/Phi-3-mini-4k-instruct")
+
+        assert call_message is not None
+        for item in call_message:  # type: ignore
+            if item["role"] == "system":
+                assert item["content"].startswith("You are my expert")
             elif item["role"] == "user":
                 assert (
                     item["content"]

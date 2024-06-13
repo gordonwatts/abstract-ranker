@@ -131,39 +131,43 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
 def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
-    prompt = """I am an expert in experimental particle physics as well as computing for
-    particle physics. You are my expert AI assistant who is well versed in particle physics
-    and particle physics computing. My interests are in the following areas:
+    prompt = """Help me judge the following conference presentation as interesting or not.
+My interests are in the following areas:
+
     1. Hidden Sector Physics
     2. Long Lived Particles (Exotics or RPV SUSY)
-    3. Analysis techniques and methods and frameworks, particularly those based around python or
-       ROOT's DataFrame (RDF)
+    3. Analysis techniques and methods and frameworks, particularly those based around python or ROOT's DataFrame (RDF)
     4. Machine Learning and AI for particle physics
-    5. Distributed computing for analysis (e.g. Dask, Spark, etc)
-    6. Data Preservation and FAIR principles
-    7. Differentiable Programming
+    5. The ServiceX tool
+    6. Distributed computing for analysis (e.g. Dask, Spark, etc)
+    7. Data Preservation and FAIR principles
+    8. Differentiable Programming
 
-    I'm not very interested in:
+I am *not interested* in:
+
     1. Quantum Computing
-    2. Lattice QCD
+    2. Lattice Gauge Theory
     3. Neutrino Physics
 
-    Please summarize this conference abstract so I can quickly judge the abstract and if I want to
-    see the talk it represents.
+Please format your yaml-reply with the summary  (One line, terse, summary of the abstract that
+does not repeat the title. It should add extra information beyond the title, and should mention
+any key outcomes that are present in the abstract), experiment (If you can guess the experiment
+this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here. Otherwise leave
+it blank), keywords (yaml-list of 4 or less keywords or phrases describing topics in the below
+abstract and title, comma
+separated, pulled from my list of interests), and interest(put: "high" (hits several of the
+interests listed above), "medium" (hits one interest), or "low" (hits a not interest). Be harsh,
+my time is valuable) fields.
 
-    Your reply should have the following format:
+Here is the talk title and Abstract:
+"""
+    # Your reply should have the following yaml-format:
 
-    summary: <One line, terse, summary of the abstract that does not repeat the title. It should
-              add extra information beyond the title, and should mention any key outcomes that are
-              present in the abstract>
-    experiment: <If you can guess the experiment this abstract is associated with (e.g. ATLAS, CMS,
-                 LHCb, etc), place it here. Otherwise blank.>
-    keywords: <comma separated list of keywords that match my interest list above. If you can't
-               find any, leave blank.>
-    interest: <If you can guess how interested I am from above, put "low", "medium", or "high"
-                here. Otherwise blank.>
-
-    Here is the talk title and Abstract:"""
+    # summary: <One line, terse, summary of the abstract that does not repeat the title. It should add extra information beyond the title, and should mention any key outcomes that are present in the abstract>
+    # experiment: <If you can guess the experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here. Otherwise leave it blank.>
+    # keywords: <4 or less keywords describing topics in the below abstract and title, comma separated, pulled from my list of interests>
+    # interest: <put: "high" (hits several of the interests listed above), "medium" (hits one interest), or "low" (hits a not interest). Be harsh, my time is valuable.>
+    # why-interested: <Few words on why you assigned the interest level you did>
 
     process_contributions(event_url, prompt, args.model)
 

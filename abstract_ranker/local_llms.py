@@ -1,6 +1,8 @@
 import logging
 from typing import Any, Dict
 
+import yaml
+
 _hf_models: Dict[str, Any] = {}
 
 
@@ -56,9 +58,9 @@ Abstract: {context["abstract"]}"""
     messages = [
         {
             "role": "system",
-            "content": "All of your answers will be parsed by a yaml parser. "
-            "Format answer as yaml (all output must be yaml). If the user gives you a template"
-            " for the yaml, please use that (it will be in between ```yaml <template> ```.",
+            "content": "You are my expert AI assistant who is well versed in particle physics and "
+            "particle physics computing. "
+            "Your complete answer must be in a yaml format. Do not add any explanations.",
         },
         {
             "role": "user",
@@ -73,7 +75,7 @@ Abstract: {context["abstract"]}"""
     generation_args = {
         "max_new_tokens": 250,
         "return_full_text": False,
-        "temperature": 1.0,
+        "temperature": 1.1,
         "do_sample": True,
     }
     logger.debug(f"Running the pipeline with args: {content}")
@@ -82,4 +84,14 @@ Abstract: {context["abstract"]}"""
     result = full_result[0]["generated_text"]
     assert isinstance(result, str)
     logger.info(f"Text from hf LLM for {context['title']}: \n--**--\n{result}\n--**--")
-    return result
+
+    # Strip off the yaml md header if it gave it to us.
+    result = result.strip()
+    if result.startswith("```yaml"):
+        result = result[7:]
+    end_index = result.find("```")
+    if end_index > 0:
+        result = result[:end_index]
+    result = result.strip()
+
+    return yaml.safe_load(result)
