@@ -71,14 +71,15 @@ Abstract: {context["abstract"]}"""
 
     logger.debug("Running the pipeline")
     generation_args = {
-        "max_new_tokens": 600,
+        "max_new_tokens": 250,
         "return_full_text": False,
-        "temperature": 0.3,
-        "do_sample": False,
+        "temperature": 1.0,
+        "do_sample": True,
     }
+    logger.debug(f"Running the pipeline with args: {content}")
     full_result = pipe(messages, **generation_args)
     logger.debug(f"Result from hf inference for {context['title']}: {full_result}")
     result = full_result[0]["generated_text"]
     assert isinstance(result, str)
-    logger.info(f"Text from hf LLM for {context['title']}: {result}")
+    logger.info(f"Text from hf LLM for {context['title']}: \n--**--\n{result}\n--**--")
     return result
