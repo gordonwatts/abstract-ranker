@@ -10,3 +10,10 @@ It worked surprisingly well. Enough to make me wonder if I shouldn't be using so
 ## Other info
 
 Using gpt 3.5 turbo cost pannies to do this, and 4 turbo cost about $1.60 US. I didn't get as far as comparing the results of the two to know if the 3.5 was good enough.
+
+## Tyring it out
+
+The following is a way to use `phi-3` as an example:
+
+```bash
+```
