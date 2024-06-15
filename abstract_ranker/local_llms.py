@@ -25,12 +25,12 @@ def create_pipeline(model_name: str):
         from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 
         model = AutoModelForCausalLM.from_pretrained(
-            "microsoft/Phi-3-mini-4k-instruct",
+            model_name,
             device_map="cuda",
             torch_dtype="auto",
             trust_remote_code=True,
         )
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/Phi-3-mini-4k-instruct")
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
 
         _hf_models[model_name] = pipeline(
             "text-generation", model=model, tokenizer=tokenizer
@@ -60,7 +60,8 @@ Abstract: {context["abstract"]}"""
             "role": "system",
             "content": "You are my expert AI assistant who is well versed in particle physics and "
             "particle physics computing. "
-            "Your complete answer must be in a yaml format. Do not add any explanations.",
+            "Your complete answer must be in a yaml format (not markdown!). Do not add any "
+            "explanations.",
         },
         {
             "role": "user",
