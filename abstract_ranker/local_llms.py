@@ -1,14 +1,14 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from joblib import Memory
 from lmformatenforcer import JsonSchemaParser
 from lmformatenforcer.integrations.transformers import (
     build_transformers_prefix_allowed_tokens_fn,
 )
-from pydantic import BaseModel
 
 from abstract_ranker.config import CACHE_DIR
+from abstract_ranker.data_model import AbstractLLMResponse
 
 memory_hf = Memory(CACHE_DIR / "huggingface_llms", verbose=0)
 
@@ -50,7 +50,9 @@ def create_pipeline(model_name: str):
 
 
 @memory_hf.cache
-def query_hugging_face(query: str, context: Dict[str, str], model_name: str) -> str:
+def query_hugging_face(
+    query: str, context: Dict[str, str], model_name: str
+) -> AbstractLLMResponse:
     """Use the `transformers` library to run a query from huggingface.co.
 
     Args:
@@ -62,19 +64,12 @@ def query_hugging_face(query: str, context: Dict[str, str], model_name: str) -> 
         str: The reply to the question.
     """
 
-    class AnswerFormat(BaseModel):
-        one_line_summary: str
-        experiment: str
-        keywords: List[str]
-        interest: str
-        explanation_of_interest: str
-
     # Build the content out of the context
     content = f"""{query}
 Title: {context["title"]}
 Abstract: {context["abstract"]}
 
-Please answer in the json schema: {AnswerFormat.schema_json()}
+Please answer in the json schema: {AbstractLLMResponse.schema_json()}
 """
 
     messages = [
@@ -92,7 +87,7 @@ Please answer in the json schema: {AnswerFormat.schema_json()}
     logger = logging.getLogger(__name__)
     logger.debug(f"Loading in model {model_name}")
     pipe = create_pipeline(model_name)
-    parser = JsonSchemaParser(AnswerFormat.schema())
+    parser = JsonSchemaParser(AbstractLLMResponse.schema())
 
     prefix_function = build_transformers_prefix_allowed_tokens_fn(
         pipe.tokenizer, parser
@@ -113,6 +108,6 @@ Please answer in the json schema: {AnswerFormat.schema_json()}
     logger.debug(f"Text from hf LLM for {context['title']}: \n--**--\n{result}\n--**--")
 
     # Parse result into a dict
-    answer = AnswerFormat.model_validate_json(result)
+    answer = AbstractLLMResponse.model_validate_json(result)
 
-    return ""
+    return answer
