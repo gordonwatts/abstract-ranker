@@ -13,6 +13,7 @@ dependencies = [
   'pyyaml',
   'transformers',
   'accelerate',
+  'lm-format-enforcer',
   # 'flash-attn', Needed only for training?
 ]
 # You will need pytorch too for running against phi3

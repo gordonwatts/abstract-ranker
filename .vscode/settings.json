@@ -8,6 +8,7 @@
     "joblib",
     "llms",
     "localzone",
+    "MATHUSLA",
     "openai",
     "pydantic",
     "pytz",
