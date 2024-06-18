@@ -12,7 +12,7 @@ def cache_dir(tmp_path):
         yield cache_dir
 
 
-@pytest.fixture()
+@pytest.fixture(autouse=True)
 def setup_before_test():
     "Reset state"
     from abstract_ranker.local_llms import reset
