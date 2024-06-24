@@ -108,6 +108,10 @@ Please answer in the json schema: {AbstractLLMResponse.schema_json()}
     logger.debug(f"Text from hf LLM for {context['title']}: \n--**--\n{result}\n--**--")
 
     # Parse result into a dict
-    answer = AbstractLLMResponse.model_validate_json(result)
+    try:
+        answer = AbstractLLMResponse.model_validate_json(result)
+    except Exception:
+        logging.error(f"Bad JSON format for '{context['title']}': {result}")
+        raise
 
     return answer
