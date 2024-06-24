@@ -116,7 +116,7 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
                         as_a_number(summary.interest),
                         contrib.type,
                     ]
-                )
+                )s
 
     # Print a message indicating the CSV file has been created
     logging.info(f"CSV file '{csv_file}' has been created.")
