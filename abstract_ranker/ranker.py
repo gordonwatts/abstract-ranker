@@ -56,12 +56,6 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
     """
     data = load_indico_json(event_url)
 
-    def safe_get(d, key):
-        if key in d:
-            return d[key] if d[key] else ""
-        else:
-            return ""
-
     def as_a_number(interest):
         if interest == "high":
             return 3
@@ -116,10 +110,10 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
                         ),
                         contrib.roomFullname if contrib.roomFullname else "",
                         contrib.title,
-                        safe_get(summary, "summary"),
-                        safe_get(summary, "experiment"),
-                        safe_get(summary, "keywords"),
-                        as_a_number(safe_get(summary, "interest")),
+                        summary.summary,
+                        summary.experiment,
+                        summary.keywords,
+                        as_a_number(summary.interest),
                         contrib.type,
                     ]
                 )
