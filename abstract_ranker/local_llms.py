@@ -69,7 +69,7 @@ def query_hugging_face(
 Title: {context["title"]}
 Abstract: {context["abstract"]}
 
-Please answer in the json schema: {AbstractLLMResponse.schema_json()}
+Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
 """
 
     messages = [
