@@ -11,8 +11,8 @@ class AbstractLLMResponse(BaseModel):
     # The most likely experiment this is associated with
     experiment: str = Field(
         ...,
-        title="The most likely experiment associated with this work (ATLAS, CMS, LHCb, "
-        "MATHUSLA, etc.). Blank if unknown.",
+        title="The Experiment associated with this work if known (ATLAS, CMS, LHCb, "
+        "MATHUSLA, etc.). Blank if unknown. No explanation.",
     )
 
     # List of keywords
@@ -28,5 +28,5 @@ class AbstractLLMResponse(BaseModel):
     # A short explanation of why the interest level is what it is
     explanation: str = Field(
         ...,
-        title="Explanation of the interest level in the abstract",
+        title="Explanation of the interest level in the abstract. Very short.",
     )
