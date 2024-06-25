@@ -1,7 +1,11 @@
 {
   "cSpell.words": [
     "autouse",
+    "Calo",
     "filelock",
+    "generalisation",
+    "generalise",
+    "generalised",
     "httpcore",
     "httpx",
     "huggingface",
@@ -15,6 +19,7 @@
     "pydantic",
     "pytz",
     "SUSY",
-    "tzlocal"
+    "tzlocal",
+    "Unet"
   ]
 }
