@@ -1,17 +1,12 @@
 import logging
 from typing import Any, Dict
 
-from joblib import Memory
 from lmformatenforcer import JsonSchemaParser
 from lmformatenforcer.integrations.transformers import (
     build_transformers_prefix_allowed_tokens_fn,
 )
 
-from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
-
-memory_hf = Memory(CACHE_DIR / "huggingface_llms", verbose=0)
-
 
 _hf_models: Dict[str, Any] = {}
 
@@ -49,7 +44,6 @@ def create_pipeline(model_name: str):
     return _hf_models[model_name]
 
 
-@memory_hf.cache
 def query_hugging_face(
     query: str, context: Dict[str, str], model_name: str
 ) -> AbstractLLMResponse:
