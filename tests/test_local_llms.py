@@ -59,7 +59,7 @@ def test_hf(pipeline_callback, setup_before_test):
     pipeline_callback.assert_called_once_with("microsoft/Phi-3-mini-4k-instruct")
 
 
-# @pytest.mark.skip("This test uses phi-3 and is too expensive to run all the time")
+@pytest.mark.skip("This test uses phi-3 and is too expensive to run all the time")
 def test_CaloDiT_phi3():
     "This abstract summary was failing in the wild"
 
