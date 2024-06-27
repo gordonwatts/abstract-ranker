@@ -28,7 +28,7 @@ class AbstractLLMResponse(BaseModel):
     # A short explanation of why the interest level is what it is
     explanation: str = Field(
         ...,
-        title="Explanation of the interest level in the abstract. Very short.",
+        title="Explanation of the interest level in the abstract. Very short!",
     )
 
 
