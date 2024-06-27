@@ -1,13 +1,13 @@
+import argparse
 import csv
 import logging
 from typing import Any, Dict, Generator, Optional
 
 from pydantic import BaseModel
 
+from abstract_ranker.config import abstract_ranking_prompt
 from abstract_ranker.indico import IndicoDate, load_indico_json
 from abstract_ranker.llm_utils import get_llm_models, query_llm
-import argparse
-
 from abstract_ranker.utils import generate_ranking_csv_filename
 
 
@@ -125,27 +125,8 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
 def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
-    prompt = """Help me judge the following conference presentation as interesting or not.
-My interests are in the following areas:
 
-    1. Hidden Sector Physics
-    2. Long Lived Particles (Exotics or RPV SUSY)
-    3. Analysis techniques and methods and frameworks, particularly those based around python or
-       ROOT's DataFrame (RDF)
-    4. Machine Learning and AI for particle physics
-    5. The ServiceX tool
-    6. Distributed computing for analysis (e.g. Dask, Spark, etc)
-    7. Data Preservation and FAIR principles
-    8. Differentiable Programming
-
-I am *not interested* in:
-
-    1. Quantum Computing
-    2. Lattice Gauge Theory
-    3. Neutrino Physics
-
-"""
-    process_contributions(event_url, prompt, args.model)
+    process_contributions(event_url, abstract_ranking_prompt, args.model)
 
 
 if __name__ == "__main__":
