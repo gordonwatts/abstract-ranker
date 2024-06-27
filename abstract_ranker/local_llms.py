@@ -60,6 +60,8 @@ def query_hugging_face(
 
     # Build the content out of the context
     content = f"""{query}
+
+Following are the title and abstract of the conference talk:
 Title: {context["title"]}
 Abstract: {context["abstract"]}
 
