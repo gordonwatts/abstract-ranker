@@ -3,19 +3,14 @@ from pathlib import Path
 from typing import Dict
 
 import openai
-from joblib import Memory
 
-from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
-
-memory_openapi = Memory(CACHE_DIR / "openapi", verbose=0)
 
 
 def get_key():
     return Path(".openai_key").read_text().strip()
 
 
-@memory_openapi.cache
 def query_gpt(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
     """Queries LLM `model` with a prompt and context.
 

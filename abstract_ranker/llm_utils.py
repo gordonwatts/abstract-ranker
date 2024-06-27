@@ -1,8 +1,13 @@
 from typing import Any, Callable, Dict, List
 
+from joblib import Memory
+
+from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
 from abstract_ranker.local_llms import query_hugging_face
 from abstract_ranker.openai_utils import query_gpt
+
+memory_llm_query = Memory(CACHE_DIR / "llm_queries", verbose=0)
 
 
 _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] = {
@@ -24,6 +29,7 @@ def get_llm_models() -> List[str]:
     return list(_llm_dispatch.keys())
 
 
+@memory_llm_query.cache
 def query_llm(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
