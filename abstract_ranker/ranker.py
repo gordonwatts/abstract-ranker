@@ -5,8 +5,7 @@ from typing import Any, Dict, Generator, Optional
 from pydantic import BaseModel
 
 from abstract_ranker.indico import IndicoDate, load_indico_json
-from abstract_ranker.llm_utils import get_llm_models
-from abstract_ranker.openai_utils import query_gpt
+from abstract_ranker.llm_utils import get_llm_models, query_llm
 import argparse
 
 from abstract_ranker.utils import generate_ranking_csv_filename
@@ -57,12 +56,6 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
     """
     data = load_indico_json(event_url)
 
-    def safe_get(d, key):
-        if key in d:
-            return d[key] if d[key] else ""
-        else:
-            return ""
-
     def as_a_number(interest):
         if interest == "high":
             return 3
@@ -96,7 +89,7 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
         # Iterate over the contributions and write each row
         for contrib in contributions(data):
             if not (contrib.description is None or len(contrib.description) < 10):
-                summary = query_gpt(
+                summary = query_llm(
                     prompt,
                     {"title": contrib.title, "abstract": contrib.description},
                     model,
@@ -117,10 +110,10 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
                         ),
                         contrib.roomFullname if contrib.roomFullname else "",
                         contrib.title,
-                        safe_get(summary, "summary"),
-                        safe_get(summary, "experiment"),
-                        safe_get(summary, "keywords"),
-                        as_a_number(safe_get(summary, "interest")),
+                        summary.summary,
+                        summary.experiment,
+                        summary.keywords,
+                        as_a_number(summary.interest),
                         contrib.type,
                     ]
                 )
@@ -132,40 +125,36 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
 def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
-    prompt = """I am an expert in experimental particle physics as well as computing for
-    particle physics. You are my expert AI assistant who is well versed in particle physics
-    and particle physics computing. My interests are in the following areas:
+    prompt = """Help me judge the following conference presentation as interesting or not.
+My interests are in the following areas:
+
     1. Hidden Sector Physics
     2. Long Lived Particles (Exotics or RPV SUSY)
     3. Analysis techniques and methods and frameworks, particularly those based around python or
        ROOT's DataFrame (RDF)
     4. Machine Learning and AI for particle physics
-    5. Distributed computing for analysis (e.g. Dask, Spark, etc)
-    6. Data Preservation and FAIR principles
-    7. Differentiable Programming
+    5. The ServiceX tool
+    6. Distributed computing for analysis (e.g. Dask, Spark, etc)
+    7. Data Preservation and FAIR principles
+    8. Differentiable Programming
 
-    I'm not very interested in:
+I am *not interested* in:
+
     1. Quantum Computing
-    2. Lattice QCD
+    2. Lattice Gauge Theory
     3. Neutrino Physics
 
-    Please summarize this conference abstract so I can quickly judge the abstract and if I want to
-    see the talk it represents.
+Please format your with a summary  (One line, terse, summary of the abstract that
+does not repeat the title. It should add extra information beyond the title, and should mention
+any key outcomes that are present in the abstract), an experiment name (If you can guess the
+experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here. Otherwise
+leave it blank), a list of keywords (json-list of 4 or less keywords or phrases describing topics
+in the below abstract and title, comma separated, pulled from my list of interests), and my
+expected interest(put: "high" (hits several of the interests listed above), "medium" (hits one
+interest), or "low" (hits a not interest). Be harsh, my time is valuable).
 
-    Your reply should have the following format:
-
-    summary: <One line, terse, summary of the abstract that does not repeat the title. It should
-              add extra information beyond the title, and should mention any key outcomes that are
-              present in the abstract>
-    experiment: <If you can guess the experiment this abstract is associated with (e.g. ATLAS, CMS,
-                 LHCb, etc), place it here. Otherwise blank.>
-    keywords: <comma separated list of keywords that match my interest list above. If you can't
-               find any, leave blank.>
-    interest: <If you can guess how interested I am from above, put "low", "medium", or "high"
-                here. Otherwise blank.>
-
-    Here is the talk title and Abstract:"""
-
+Here is the talk title and Abstract:
+"""
     process_contributions(event_url, prompt, args.model)
 
 
@@ -187,9 +176,26 @@ if __name__ == "__main__":
         choices=get_llm_models(),
         default="GPT4o",
     )
+    rank_parser.add_argument(
+        "-v",
+        action="count",
+        default=0,
+        help="Increase output verbosity",
+    )
     rank_parser.set_defaults(func=cmd_rank)
 
     args = parser.parse_args()
+
+    # Turn on logging. If the verbosity is 1, set the logging level to INFO. If the verbosity is 2,
+    # set the logging level to DEBUG.
+    if args.v == 1:
+        logging.basicConfig(level=logging.INFO)
+    elif args.v == 2:
+        logging.basicConfig(level=logging.DEBUG)
+        for p in ["httpx", "httpcore", "urllib3", "filelock"]:
+            logging.getLogger(p).setLevel(logging.WARNING)
+    elif args.v >= 3:
+        logging.basicConfig(level=logging.DEBUG)
 
     # Next, call the appropriate command function.
     func = args.func

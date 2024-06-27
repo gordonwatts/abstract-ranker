@@ -3,16 +3,20 @@ from pathlib import Path
 from typing import Dict
 
 import openai
-import yaml
 from joblib import Memory
 
 from abstract_ranker.config import CACHE_DIR
+from abstract_ranker.data_model import AbstractLLMResponse
 
 memory_openapi = Memory(CACHE_DIR / "openapi", verbose=0)
 
 
+def get_key():
+    return Path(".openai_key").read_text().strip()
+
+
 @memory_openapi.cache
-def query_gpt(prompt: str, context: Dict[str, str], model: str) -> dict:
+def query_gpt(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
     """Queries LLM `model` with a prompt and context.
 
     Args:
@@ -20,21 +24,22 @@ def query_gpt(prompt: str, context: Dict[str, str], model: str) -> dict:
         context (str): The context for the query.
 
     Returns:
-        dict: The parsed YAML response from OpenAI.
+        AbstractLLMResponse: The parsed json response from open AI.
     """
     # Build context:
     c_text = f"""Title: {context['title']}
 Abstract: {context['abstract']}"""
 
     # Generate the completion using OpenAI GPT-3.5 Turbo
-    openai_client = openai.OpenAI(api_key=Path(".openai_key").read_text().strip())
+    openai_client = openai.OpenAI(api_key=get_key())
     response = openai_client.chat.completions.create(
         # model="gpt-3.5-turbo",
-        model="gpt-4-turbo-preview",
+        model=model,
         messages=[
             {
                 "role": "system",
-                "content": prompt,
+                "content": "You are a helpful assistant and expert in the field of experimental "
+                "particle physics. Please return responses in JSON.",
             },
             {"role": "user", "content": prompt},
             {"role": "user", "content": c_text},
@@ -48,11 +53,14 @@ Abstract: {context['abstract']}"""
     # Parse the YAML response
     r = response.choices[0].message.content
     if r is not None:
-        parsed_response = yaml.safe_load(r)
+        parsed_response = AbstractLLMResponse.model_validate_json(r)
     else:
-        parsed_response = {
-            "summary:": "No response from GPT-3.5 Turbo.",
-            "experiment": "",
-        }
+        parsed_response = AbstractLLMResponse(
+            summary="No response from GPT-3.5 Turbo.",
+            experiment="",
+            keywords=[],
+            interest="",
+            explanation="",
+        )
 
     return parsed_response

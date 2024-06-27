@@ -1,12 +1,17 @@
-from typing import Dict, List
+from typing import Any, Callable, Dict, List
 
+from abstract_ranker.data_model import AbstractLLMResponse
+from abstract_ranker.local_llms import query_hugging_face
 from abstract_ranker.openai_utils import query_gpt
 
 
-_llm_dispatch = {
+_llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] = {
     "GPT4Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-4-turbo"),
     "GPT4o": lambda prompt, context: query_gpt(prompt, context, "gpt-4o"),
     "GPT35Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-3.5-turbo"),
+    "phi3-mini": lambda prompt, context: query_hugging_face(
+        prompt, context, "microsoft/Phi-3-mini-4k-instruct"
+    ),
 }
 
 
@@ -19,7 +24,7 @@ def get_llm_models() -> List[str]:
     return list(_llm_dispatch.keys())
 
 
-def query_llm(prompt: str, context: Dict[str, str], model: str) -> dict:
+def query_llm(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
     Args:

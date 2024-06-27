@@ -11,7 +11,13 @@ dependencies = [
   'tzlocal',
   'openai',
   'pyyaml',
+  'transformers',
+  'accelerate',
+  'lm-format-enforcer',
+  # 'flash-attn', Needed only for training?
 ]
+# You will need pytorch too for running against phi3
+# pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 name = "conference-llm-tools"
 dynamic = ["version"]
