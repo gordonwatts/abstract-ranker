@@ -83,7 +83,7 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
     logger = logging.getLogger(__name__)
     logger.debug(f"Loading in model {model_name}")
     pipe = create_pipeline(model_name)
-    parser = JsonSchemaParser(AbstractLLMResponse.schema())
+    parser = JsonSchemaParser(AbstractLLMResponse.model_json_schema())
 
     prefix_function = build_transformers_prefix_allowed_tokens_fn(
         pipe.tokenizer, parser
