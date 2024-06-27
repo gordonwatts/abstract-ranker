@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from abstract_ranker.config import abstract_ranking_prompt
 from abstract_ranker.local_llms import query_hugging_face
 
 
@@ -58,7 +59,7 @@ def test_hf(pipeline_callback, setup_before_test):
     pipeline_callback.assert_called_once_with("microsoft/Phi-3-mini-4k-instruct")
 
 
-@pytest.mark.skip("This test uses phi-3 and is too expensive to run all the time")
+# @pytest.mark.skip("This test uses phi-3 and is too expensive to run all the time")
 def test_CaloDiT_phi3():
     "This abstract summary was failing in the wild"
 
@@ -83,40 +84,8 @@ of the model to generalise to different calorimeter geometries, bringing us clos
 model for calorimeter shower generation."""
     abstract = abstract.replace("\n", " ")
 
-    query = """
-Help me judge the following conference presentation as interesting or not.
-My interests are in the following areas:
-
-    1. Hidden Sector Physics
-    2. Long Lived Particles (Exotics or RPV SUSY)
-    3. Analysis techniques and methods and frameworks, particularly those based around python or
-       ROOT's DataFrame (RDF)
-    4. Machine Learning and AI for particle physics
-    5. The ServiceX tool
-    6. Distributed computing for analysis (e.g. Dask, Spark, etc)
-    7. Data Preservation and FAIR principles
-    8. Differentiable Programming
-
-I am *not interested* in:
-
-    1. Quantum Computing
-    2. Lattice Gauge Theory
-    3. Neutrino Physics
-
-Please format your with a summary  (One line, terse, summary of the abstract that
-does not repeat the title. It should add extra information beyond the title, and should mention
-any key outcomes that are present in the abstract), an experiment name (If you can guess the
-experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here. Otherwise
-leave it blank), a list of keywords (json-list of 4 or less keywords or phrases describing topics
-in the below abstract and title, comma separated, pulled from my list of interests), and my
-expected interest(put: "high" (hits several of the interests listed above), "medium" (hits one
-interest), or "low" (hits a not interest). Be harsh, my time is valuable).
-
-Here is the talk title and Abstract:
-"""
-
     r = query_hugging_face(
-        query,
+        abstract_ranking_prompt,
         {"title": title, "abstract": abstract},
         "microsoft/Phi-3-mini-4k-instruct",
     )
