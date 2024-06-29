@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, Generator, Optional
 
 from pydantic import BaseModel
+from rich.progress import Progress
 
 from abstract_ranker.config import abstract_ranking_prompt
 from abstract_ranker.indico import IndicoDate, load_indico_json
@@ -45,7 +46,9 @@ def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, N
         yield Contribution(**contrib)
 
 
-def process_contributions(event_url: str, prompt: str, model: str) -> None:
+def process_contributions(
+    event_url: str, prompt: str, model: str, progress_bar: bool
+) -> None:
     """
     Process contributions from the event URL and write them to a CSV file.
 
@@ -53,6 +56,7 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
         event_url (str): The URL of the event.
         prompt (str): The prompt for summarizing the abstracts.
         model(str): The LLM to use for summarization.
+        progress_bar (bool): Whether to show a progress bar.
     """
     data = load_indico_json(event_url)
 
@@ -87,36 +91,46 @@ def process_contributions(event_url: str, prompt: str, model: str) -> None:
         )
 
         # Iterate over the contributions and write each row
-        for contrib in contributions(data):
-            if not (contrib.description is None or len(contrib.description) < 10):
-                summary = query_llm(
-                    prompt,
-                    {"title": contrib.title, "abstract": contrib.description},
-                    model,
+        with Progress() as progress:
+            task = (
+                progress.add_task(
+                    "Ranking contributions", total=len(data["contributions"])
                 )
+                if progress_bar
+                else None
+            )
+            for contrib in contributions(data):
+                if not (contrib.description is None or len(contrib.description) < 10):
+                    summary = query_llm(
+                        prompt,
+                        {"title": contrib.title, "abstract": contrib.description},
+                        model,
+                    )
 
-                # Write the row to the CSV file
-                writer.writerow(
-                    [
-                        (
-                            contrib.startDate.get_local_datetime()[0]
-                            if contrib.startDate
-                            else ""
-                        ),
-                        (
-                            contrib.startDate.get_local_datetime()[1]
-                            if contrib.startDate
-                            else ""
-                        ),
-                        contrib.roomFullname if contrib.roomFullname else "",
-                        contrib.title,
-                        summary.summary,
-                        summary.experiment,
-                        summary.keywords,
-                        as_a_number(summary.interest),
-                        contrib.type,
-                    ]
-                )
+                    # Write the row to the CSV file
+                    writer.writerow(
+                        [
+                            (
+                                contrib.startDate.get_local_datetime()[0]
+                                if contrib.startDate
+                                else ""
+                            ),
+                            (
+                                contrib.startDate.get_local_datetime()[1]
+                                if contrib.startDate
+                                else ""
+                            ),
+                            contrib.roomFullname if contrib.roomFullname else "",
+                            contrib.title,
+                            summary.summary,
+                            summary.experiment,
+                            summary.keywords,
+                            as_a_number(summary.interest),
+                            contrib.type,
+                        ]
+                    )
+                if task is not None:
+                    progress.update(task, advance=1)
 
     # Print a message indicating the CSV file has been created
     logging.info(f"CSV file '{csv_file}' has been created.")
@@ -126,7 +140,7 @@ def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
 
-    process_contributions(event_url, abstract_ranking_prompt, args.model)
+    process_contributions(event_url, abstract_ranking_prompt, args.model, args.v == 0)
 
 
 if __name__ == "__main__":
