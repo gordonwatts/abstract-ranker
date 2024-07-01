@@ -143,8 +143,7 @@ def cmd_rank(args):
     process_contributions(event_url, abstract_ranking_prompt, args.model, args.v == 0)
 
 
-if __name__ == "__main__":
-
+def main():
     # Define a command-line parser.
     parser = argparse.ArgumentParser(description="Abstract Ranker")
     parser.set_defaults(func=lambda _: parser.print_usage())
@@ -185,3 +184,7 @@ if __name__ == "__main__":
     # Next, call the appropriate command function.
     func = args.func
     func(args)
+
+
+if __name__ == "__main__":
+    main()

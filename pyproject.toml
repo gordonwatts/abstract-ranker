@@ -50,6 +50,9 @@ packages = ["abstract_ranker"]
 [project.optional-dependencies]
 test = ["pytest", "black", "flake8"]
 
+[project.scripts]
+abstract_ranker = "abstract_ranker.ranker:main"
+
 [tool.hatch.envs.dev.scripts]
 check = "mypy --install-types --non-interactive {args:abstract_ranker tests}"
 test = "pytest {args:tests}"
