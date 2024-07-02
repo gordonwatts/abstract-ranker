@@ -30,7 +30,9 @@ def get_llm_models() -> List[str]:
 
 
 @memory_llm_query.cache
-def query_llm(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
+def query_llm(
+    prompt: str, context: Dict[str, str | List[str]], model: str
+) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
     Args:
