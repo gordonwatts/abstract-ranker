@@ -89,7 +89,7 @@ def query_hugging_face(
         },
         {
             "role": "user",
-            "content": "Please answer in the JSON scheme: "
+            "content": "Phrase your answer as carefully considered JSON in the following schema:\n"
             f"{AbstractLLMResponse.model_json_schema()}",
         },
     ]
