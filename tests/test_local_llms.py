@@ -3,7 +3,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from abstract_ranker.config import abstract_ranking_prompt
+from abstract_ranker.config import (
+    abstract_ranking_prompt,
+    interested_topics,
+    not_interested_topics,
+)
 from abstract_ranker.local_llms import query_hugging_face
 
 
@@ -26,7 +30,7 @@ def pipeline_callback():
                 ) -> List[Dict[str, str]]:
                     nonlocal call_message
                     assert isinstance(msg, list)
-                    assert len(msg) == 2
+                    assert len(msg) == 7
                     call_message = msg
                     return [
                         {
@@ -50,7 +54,12 @@ def test_hf(pipeline_callback, setup_before_test):
 
     result = query_hugging_face(
         "What is the summary?",
-        {"title": "Title", "abstract": "Abstract"},
+        {
+            "title": "Title",
+            "abstract": "Abstract",
+            "interested_topics": ["one", "two"],
+            "not_interested_topics": ["three", "four"],
+        },
         "microsoft/Phi-3-mini-4k-instruct",
     )
     # Check the result
@@ -86,7 +95,12 @@ model for calorimeter shower generation."""
 
     r = query_hugging_face(
         abstract_ranking_prompt,
-        {"title": title, "abstract": abstract},
+        {
+            "title": title,
+            "abstract": abstract,
+            "interested_topics": interested_topics,
+            "not_interested_topics": not_interested_topics,
+        },
         "microsoft/Phi-3-mini-4k-instruct",
     )
 

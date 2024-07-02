@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from lmformatenforcer import JsonSchemaParser
 from lmformatenforcer.integrations.transformers import (
@@ -45,7 +45,7 @@ def create_pipeline(model_name: str):
 
 
 def query_hugging_face(
-    query: str, context: Dict[str, str], model_name: str
+    query: str, context: Dict[str, str | List[str]], model_name: str
 ) -> AbstractLLMResponse:
     """Use the `transformers` library to run a query from huggingface.co.
 
@@ -59,15 +59,6 @@ def query_hugging_face(
     """
 
     # Build the content out of the context
-    content = f"""{query}
-
-Following are the title and abstract of the conference talk:
-Title: {context["title"]}
-Abstract: {context["abstract"]}
-
-Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
-"""
-
     messages = [
         {
             "role": "system",
@@ -76,7 +67,30 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
         },
         {
             "role": "user",
-            "content": content,
+            "content": query,
+        },
+        {
+            "role": "user",
+            "content": "Topics I'm very interested in:\n - "
+            + "\n - ".join(context["interested_topics"]),
+        },
+        {
+            "role": "user",
+            "content": "Topics I'm not at all interested in:\n - "
+            + "\n - ".join(context["not_interested_topics"]),
+        },
+        {
+            "role": "user",
+            "content": f'Conference Talk Title: "{context["title"]}"',
+        },
+        {
+            "role": "user",
+            "content": f'Conference Talk Abstract: "{context["abstract"]}"',
+        },
+        {
+            "role": "user",
+            "content": "Please answer in the JSON scheme: "
+            f"{AbstractLLMResponse.model_json_schema()}",
         },
     ]
 
@@ -89,7 +103,7 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
         pipe.tokenizer, parser
     )
 
-    logger.debug(f"Running the pipeline with args: {content}")
+    logger.debug(f"Running the pipeline with args: {query}")
     generation_args = {
         "max_new_tokens": 250,
         "return_full_text": False,
