@@ -110,8 +110,8 @@ def process_contributions(
                         {
                             "title": contrib.title,
                             "abstract": contrib.description,
-                            "interesting_topics": interested_topics,
-                            "not_interesting_topics": not_interested_topics,
+                            "interested_topics": interested_topics,
+                            "not_interested_topics": not_interested_topics,
                         },
                         model,
                     )
