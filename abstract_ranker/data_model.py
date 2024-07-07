@@ -6,7 +6,11 @@ class AbstractLLMResponse(BaseModel):
     "Result back from LLM grading of an abstract"
 
     # Summary of the abstract
-    summary: str = Field(..., title="The one-line summary of the abstract")
+    summary: str = Field(
+        ...,
+        title="A short summary of the abstract that does not repeat the title, no more than 200 "
+        "characters.",
+    )
 
     # The most likely experiment this is associated with
     experiment: str = Field(
@@ -17,18 +21,19 @@ class AbstractLLMResponse(BaseModel):
 
     # List of keywords
     keywords: List[str] = Field(
-        ..., title="List of keywords associated with the abstract"
+        ..., title="Short list of keywords associated with the abstract"
     )
 
     # What is the interest level here?
     interest: str = Field(
-        ..., title="Interest level in the abstract (high, medium, or low)"
+        ..., title="'high', 'medium', or 'low': how interesting I'll find the abstract."
     )
 
     # A short explanation of why the interest level is what it is
     explanation: str = Field(
         ...,
-        title="Explanation of the interest level in the abstract. Very short!",
+        title="Very short explanation of the interest level in the abstract. No more than a "
+        "single sentence, 100 words maximum.",
     )
 
 

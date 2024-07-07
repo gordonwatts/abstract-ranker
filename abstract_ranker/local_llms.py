@@ -1,10 +1,12 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from lmformatenforcer import JsonSchemaParser
 from lmformatenforcer.integrations.transformers import (
     build_transformers_prefix_allowed_tokens_fn,
 )
+from pydantic import ValidationError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 from abstract_ranker.data_model import AbstractLLMResponse
 
@@ -44,8 +46,9 @@ def create_pipeline(model_name: str):
     return _hf_models[model_name]
 
 
+@retry(stop=stop_after_attempt(3), retry=retry_if_exception_type(ValidationError))
 def query_hugging_face(
-    query: str, context: Dict[str, str], model_name: str
+    query: str, context: Dict[str, str | List[str]], model_name: str
 ) -> AbstractLLMResponse:
     """Use the `transformers` library to run a query from huggingface.co.
 
@@ -59,15 +62,6 @@ def query_hugging_face(
     """
 
     # Build the content out of the context
-    content = f"""{query}
-
-Following are the title and abstract of the conference talk:
-Title: {context["title"]}
-Abstract: {context["abstract"]}
-
-Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
-"""
-
     messages = [
         {
             "role": "system",
@@ -76,7 +70,32 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
         },
         {
             "role": "user",
-            "content": content,
+            "content": query,
+        },
+        {
+            "role": "user",
+            "content": "Topics I'm very interested in:\n - "
+            + "\n - ".join(context["interested_topics"]),
+        },
+        {
+            "role": "user",
+            "content": "Topics I'm not at all interested in:\n - "
+            + "\n - ".join(context["not_interested_topics"]),
+        },
+        {
+            "role": "user",
+            "content": f'Conference Talk Title: "{context["title"]}"',
+        },
+        {
+            "role": "user",
+            "content": f'Conference Talk Abstract: "{context["abstract"]}"',
+        },
+        {
+            "role": "user",
+            "content": "Your answer should be correct JSON using in the following schema. And "
+            "everything should be short and succinct with no emoji. Here is the answer schema as "
+            "a template:\n"
+            f"{AbstractLLMResponse.model_json_schema()['properties']}",
         },
     ]
 
@@ -89,9 +108,9 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
         pipe.tokenizer, parser
     )
 
-    logger.debug(f"Running the pipeline with args: {content}")
+    logger.debug(f"Running the pipeline with args: {query}")
     generation_args = {
-        "max_new_tokens": 250,
+        "max_new_tokens": 1024,
         "return_full_text": False,
         "temperature": 1.1,
         "do_sample": True,
@@ -101,13 +120,14 @@ Please answer in the json schema: {AbstractLLMResponse.model_json_schema()}
     logger.debug(f"Result from hf inference for {context['title']}: {full_result}")
     result = full_result[0]["generated_text"]
     assert isinstance(result, str)
+
     logger.debug(f"Text from hf LLM for {context['title']}: \n--**--\n{result}\n--**--")
 
     # Parse result into a dict
+
     try:
-        answer = AbstractLLMResponse.model_validate_json(result)
+        return AbstractLLMResponse.model_validate_json(result)
     except Exception:
         logging.error(f"Bad JSON format for '{context['title']}': {result}")
-        raise
 
-    return answer
+    return AbstractLLMResponse.model_validate_json(result + '" }')

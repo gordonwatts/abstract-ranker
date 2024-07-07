@@ -6,7 +6,11 @@ from typing import Any, Dict, Generator, Optional
 from pydantic import BaseModel
 from rich.progress import Progress
 
-from abstract_ranker.config import abstract_ranking_prompt
+from abstract_ranker.config import (
+    abstract_ranking_prompt,
+    interested_topics,
+    not_interested_topics,
+)
 from abstract_ranker.indico import IndicoDate, load_indico_json
 from abstract_ranker.llm_utils import get_llm_models, query_llm
 from abstract_ranker.utils import generate_ranking_csv_filename
@@ -103,7 +107,12 @@ def process_contributions(
                 if not (contrib.description is None or len(contrib.description) < 10):
                     summary = query_llm(
                         prompt,
-                        {"title": contrib.title, "abstract": contrib.description},
+                        {
+                            "title": contrib.title,
+                            "abstract": contrib.description,
+                            "interested_topics": interested_topics,
+                            "not_interested_topics": not_interested_topics,
+                        },
                         model,
                     )
 
