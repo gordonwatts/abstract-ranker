@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from joblib import Memory
 
@@ -31,7 +31,7 @@ def get_llm_models() -> List[str]:
 
 @memory_llm_query.cache
 def query_llm(
-    prompt: str, context: Dict[str, str | List[str]], model: str
+    prompt: str, context: Dict[str, Union[str, List[str]]], model: str
 ) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
