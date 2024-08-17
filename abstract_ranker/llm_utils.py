@@ -17,6 +17,9 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
     "phi3-mini": lambda prompt, context: query_hugging_face(
         prompt, context, "microsoft/Phi-3-mini-4k-instruct"
     ),
+    "phi3-small": lambda prompt, context: query_hugging_face(
+        prompt, context, "microsoft/Phi-3-small-8k-instruct"
+    ),
 }
 
 
