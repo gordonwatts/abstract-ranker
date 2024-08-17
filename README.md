@@ -10,12 +10,27 @@ It worked surprisingly well. Enough to make me wonder if I shouldn't be using so
 
 ## Other info
 
-Using gpt 3.5 turbo cost pannies to do this, and 4 turbo cost about $1.60 US. I didn't get as far as comparing the results of the two to know if the 3.5 was good enough.
+Using gpt 3.5 turbo cost pennies to do this, and 4 turbo cost about $1.60 US. I didn't get as far as comparing the results of the two to know if the 3.5 was good enough.
 
 ## Tyring it out
 
 The following is a way to use `phi-3` mini as an example:
 
 ```bash
- python .\abstract_ranker\ranker.py rank https://indico.cern.ch/event/1330797/contributions --model phi3-mini -v
+ abstract_ranker rank https://indico.cern.ch/event/1330797/contributions --model phi3-mini -v
 ```
+
+### Installing pytorch with cuda
+
+I had a lot of trouble here - so keeping a log:
+
+1. Use `nvcc --version` to determine what `cuda` version you have on your local machine.
+1. Use [these instructions](https://pytorch.org/get-started/locally/) to install pytorch. I did it in a conda environment, but a `venv` that uses `pip` should be fine too.
+1. Use the usual `pip install -e .[test,ml]`
+    * Note that this needs to be run on a Linux with a decent size GPU.
+    * phi3-mini will work on a smaller GPU (like a 2080 TI).
+    * phi3-small requires something larger.
+
+Notes:
+
+* On UChicago use a 2080. The A100 MIG's do not have enough memory even for a mini.

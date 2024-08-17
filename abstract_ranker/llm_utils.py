@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Union
 
 from joblib import Memory
 
@@ -17,6 +17,9 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
     "phi3-mini": lambda prompt, context: query_hugging_face(
         prompt, context, "microsoft/Phi-3-mini-4k-instruct"
     ),
+    "phi3-small": lambda prompt, context: query_hugging_face(
+        prompt, context, "microsoft/Phi-3-small-8k-instruct"
+    ),
 }
 
 
@@ -31,7 +34,7 @@ def get_llm_models() -> List[str]:
 
 @memory_llm_query.cache
 def query_llm(
-    prompt: str, context: Dict[str, str | List[str]], model: str
+    prompt: str, context: Dict[str, Union[str, List[str]]], model: str
 ) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
