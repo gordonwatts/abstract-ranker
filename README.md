@@ -29,6 +29,7 @@ I had a lot of trouble here - so keeping a log:
 1. Use the usual `pip install -e .[test,ml]`
     * Note that this needs to be run on a Linux with a decent size GPU.
     * phi3-mini will work on a smaller GPU (like a 2080 TI).
+    * phi3-small needs a modern GPU to run (like an A100 - not a V100!).
     * phi3-small requires something larger.
 
 Notes:
