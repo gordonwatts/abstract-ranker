@@ -20,6 +20,14 @@ The following is a way to use `phi-3` mini as an example:
  abstract_ranker rank https://indico.cern.ch/event/1330797/contributions --model phi3-mini -v
 ```
 
+### Installing pytorch with cuda
+
+I had a lot of trouble here - so keeping a log:
+
+1. Use `nvcc --version` to determine what `cuda` version you have on your local machine.
+1. Use [these instructions](https://pytorch.org/get-started/locally/) to install pytorch. I did it in a conda environment, but a `venv` that uses `pip` should be fine too.
+1. Use the usual `pip install -e .[test]`
+
 Notes:
 
 * On UChicago use a 2080. The A100 MIG's do not have enough memory even for a mini.
