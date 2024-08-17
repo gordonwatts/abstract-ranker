@@ -37,10 +37,10 @@ def create_pipeline(model_name: str):
             torch_dtype="auto",
             trust_remote_code=True,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
         _hf_models[model_name] = pipeline(
-            "text-generation", model=model, tokenizer=tokenizer
+            "text-generation", model=model, tokenizer=tokenizer, trust_remote_code=True
         )
 
     return _hf_models[model_name]
