@@ -8,14 +8,16 @@ dependencies = [
   'joblib',
   'pydantic',
   'requests',
-  'tzlocal',
-  'openai',
-  'pyyaml',
-  'transformers',
-  'accelerate',
-  'lm-format-enforcer',
   'rich',
+  'tzlocal',
+  'lm-format-enforcer',
+  'transformers[torch]',
   'tenacity',
+  'openai',
+#  'pyyaml',
+#  'accelerate',
+#  'tiktoken==0.6.0',
+#  'triton=2.3.0',
   # 'flash-attn', Needed only for training?
 ]
 # You will need pytorch too for running against phi3
