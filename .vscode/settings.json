@@ -20,6 +20,7 @@
     "modifyitems",
     "openai",
     "pydantic",
+    "pytestmark",
     "pytz",
     "SUSY",
     "tzlocal",
