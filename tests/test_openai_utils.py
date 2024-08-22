@@ -37,7 +37,16 @@ def test_openai_simple_call():
             from abstract_ranker.openai_utils import query_gpt
             from abstract_ranker.llm_utils import AbstractLLMResponse
 
-            r = query_gpt("hi", {"title": "hi", "abstract": "hi"}, "gpt-4-turbo-bogus")
+            r = query_gpt(
+                "hi",
+                {
+                    "title": "hi",
+                    "abstract": "hi",
+                    "interested_topics": ["hi", "there"],
+                    "not_interested_topics": ["no", "thanks"],
+                },
+                "gpt-4-turbo-bogus",
+            )
             assert isinstance(r, AbstractLLMResponse)
             assert r.summary == "hi"
             assert r.experiment == ""

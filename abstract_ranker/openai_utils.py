@@ -1,6 +1,7 @@
 # Config items
+import logging
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import openai
 
@@ -11,7 +12,9 @@ def get_key():
     return Path(".openai_key").read_text().strip()
 
 
-def query_gpt(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMResponse:
+def query_gpt(
+    prompt: str, context: Dict[str, str | List[str]], model: str
+) -> AbstractLLMResponse:
     """Queries LLM `model` with a prompt and context.
 
     Args:
@@ -21,23 +24,42 @@ def query_gpt(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMRe
     Returns:
         AbstractLLMResponse: The parsed json response from open AI.
     """
-    # Build context:
-    c_text = f"""Title: {context['title']}
-Abstract: {context['abstract']}"""
-
     # Generate the completion using OpenAI GPT-3.5 Turbo
     openai_client = openai.OpenAI(api_key=get_key())
     response = openai_client.chat.completions.create(
-        # model="gpt-3.5-turbo",
         model=model,
         messages=[
             {
                 "role": "system",
                 "content": "You are a helpful assistant and expert in the field of experimental "
-                "particle physics. Please return responses in JSON.",
+                "particle physics. All responses must be in the JSON format specified.",
             },
             {"role": "user", "content": prompt},
-            {"role": "user", "content": c_text},
+            {
+                "role": "user",
+                "content": "Topics I'm very interested in\n - "
+                + "\n - ".join(context["interested_topics"]),
+            },
+            {
+                "role": "user",
+                "content": "Topics I'm not at all interested in\n - "
+                + "\n - ".join(context["not_interested_topics"]),
+            },
+            {
+                "role": "user",
+                "content": f'Conference Talk Title: "{context["title"]}"',
+            },
+            {
+                "role": "user",
+                "content": f'Conference Talk Abstract: "{context["abstract"]}"',
+            },
+            {
+                "role": "user",
+                "content": "Your answer should be correct JSON using in the following schema. And "
+                "everything should be short and succinct with no emoji. Here is the answer schema"
+                "as a template:\n"
+                f"{AbstractLLMResponse.model_json_schema()['properties']}",
+            },
         ],
         max_tokens=1000,
         temperature=0.7,
@@ -48,7 +70,10 @@ Abstract: {context['abstract']}"""
     # Parse the YAML response
     r = response.choices[0].message.content
     if r is not None:
-        parsed_response = AbstractLLMResponse.model_validate_json(r)
+        try:
+            parsed_response = AbstractLLMResponse.model_validate_json(r)
+        except Exception as e:
+            logging.error(f"Bad JSON format for '{context['title']}': {r} ({e})")
     else:
         parsed_response = AbstractLLMResponse(
             summary="No response from GPT-3.5 Turbo.",
