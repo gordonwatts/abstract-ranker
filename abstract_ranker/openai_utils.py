@@ -59,8 +59,9 @@ def query_gpt(
             },
             {
                 "role": "user",
-                "content": "Your answer should be correct JSON using in the following JSON schema. "
-                "Everything should be short and succinct with no emoji: This is a JSON schema, so "
+                "content": "Your answer should be correct JSON using in the following JSON schema."
+                " Everything should be short and succinct with no emoji, and properly escape "
+                "latex directives. This is a JSON schema, so "
                 "replace the title and type dict with the actual data: \n"
                 f"{schema}",
             },
@@ -74,13 +75,23 @@ def query_gpt(
     # Parse the YAML response
     r = response.choices[0].message.content
     if r is not None:
+        start_bracket = r.find("{")
+        if start_bracket != -1:
+            logging.debug(f"Removing header from response: {r[:start_bracket]}")
+            r = r[start_bracket:]
+
+        end_bracket = r.rfind("}")
+        if end_bracket != -1:
+            logging.debug(f"Removing trailer from response: {r[end_bracket:]}")
+            r = r[: end_bracket + 1]
         try:
             parsed_response = AbstractLLMResponse.model_validate_json(r)
         except Exception as e:
             logging.error(f"Bad JSON format for '{context['title']}': {r} ({e})")
+            raise
     else:
         parsed_response = AbstractLLMResponse(
-            summary="No response from GPT-3.5 Turbo.",
+            summary="No response from {model}.",
             experiment="",
             keywords=[],
             interest="",
