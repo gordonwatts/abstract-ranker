@@ -21,7 +21,7 @@ class AbstractLLMResponse(BaseModel):
 
     # List of keywords
     keywords: List[str] = Field(
-        ..., title="Short list of keywords associated with the abstract"
+        ..., title="Short JSON list of string-keywords associated with the abstract"
     )
 
     # What is the interest level here?

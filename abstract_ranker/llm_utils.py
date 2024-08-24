@@ -4,20 +4,41 @@ from joblib import Memory
 
 from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
-from abstract_ranker.local_llms import query_hugging_face
-from abstract_ranker.openai_utils import query_gpt
 
 memory_llm_query = Memory(CACHE_DIR / "llm_queries", verbose=0)
 
 
+def local_query_gpt(
+    prompt: str, context: Dict[str, Union[str, List[str]]], model: str
+) -> AbstractLLMResponse:
+    from abstract_ranker.openai_utils import query_gpt
+
+    return query_gpt(prompt, context, model)
+
+
+def local_query_hugging_face(
+    query: str, context: Dict[str, Union[str, List[str]]], model_name: str
+) -> AbstractLLMResponse:
+    from abstract_ranker.local_llms import query_hugging_face
+
+    return query_hugging_face(query, context, model_name)
+
+
 _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] = {
-    "GPT4Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-4-turbo"),
-    "GPT4o": lambda prompt, context: query_gpt(prompt, context, "gpt-4o"),
-    "GPT35Turbo": lambda prompt, context: query_gpt(prompt, context, "gpt-3.5-turbo"),
-    "phi3-mini": lambda prompt, context: query_hugging_face(
+    "GPT4Turbo": lambda prompt, context: local_query_gpt(
+        prompt, context, "gpt-4-turbo"
+    ),
+    "GPT4o": lambda prompt, context: local_query_gpt(prompt, context, "gpt-4o"),
+    "GPT4o-mini": lambda prompt, context: local_query_gpt(
+        prompt, context, "gpt-4o-mini"
+    ),
+    "GPT35Turbo": lambda prompt, context: local_query_gpt(
+        prompt, context, "gpt-3.5-turbo"
+    ),
+    "phi3-mini": lambda prompt, context: local_query_hugging_face(
         prompt, context, "microsoft/Phi-3-mini-4k-instruct"
     ),
-    "phi3-small": lambda prompt, context: query_hugging_face(
+    "phi3-small": lambda prompt, context: local_query_hugging_face(
         prompt, context, "microsoft/Phi-3-small-8k-instruct"
     ),
 }

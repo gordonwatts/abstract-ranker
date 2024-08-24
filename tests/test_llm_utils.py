@@ -31,7 +31,7 @@ def test_cache(cache_dir):
     "Make sure that caching is used if called twice"
 
     # with patch("abstract_ranker.openai_utils.query_gpt") as mock_query_gpt:
-    with patch("abstract_ranker.llm_utils.query_gpt") as mock_query_gpt:
+    with patch("abstract_ranker.llm_utils.local_query_gpt") as mock_query_gpt:
         from abstract_ranker.llm_utils import AbstractLLMResponse
 
         mock_query_gpt.return_value = AbstractLLMResponse(

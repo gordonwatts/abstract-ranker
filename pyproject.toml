@@ -11,10 +11,8 @@ dependencies = [
   'rich',
   'tzlocal',
   'lm-format-enforcer',
-  'transformers[torch]',
   'tenacity',
   'openai',
-# Required for phi3-small
 ]
 # You will need pytorch too for running against phi3
 # pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
@@ -49,7 +47,7 @@ packages = ["abstract_ranker"]
 [project.optional-dependencies]
 test = ["pytest", "black", "flake8"]
 # Use 'ml' this for running things like phi3-small (need linux!).
-ml = ['einops', 'flash-attn', 'tiktoken==0.6.0']
+ml = ['einops', 'flash-attn', 'tiktoken==0.6.0', 'transformers[torch]']
 
 [project.scripts]
 abstract_ranker = "abstract_ranker.ranker:main"

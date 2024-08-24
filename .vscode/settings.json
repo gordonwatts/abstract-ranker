@@ -1,5 +1,6 @@
 {
   "cSpell.words": [
+    "addinivalue",
     "autouse",
     "Calo",
     "dtype",
@@ -16,8 +17,10 @@
     "lmformatenforcer",
     "localzone",
     "MATHUSLA",
+    "modifyitems",
     "openai",
     "pydantic",
+    "pytestmark",
     "pytz",
     "SUSY",
     "tzlocal",
