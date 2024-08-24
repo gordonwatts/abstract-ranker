@@ -24,7 +24,11 @@ def query_gpt(
     Returns:
         AbstractLLMResponse: The parsed json response from open AI.
     """
-    # Generate the completion using OpenAI GPT-3.5 Turbo
+    # Fix up Schema to make it easier for the LLM to interpret.
+    schema = AbstractLLMResponse.model_json_schema()["properties"]
+    schema = {k: v["title"] for k, v in schema.items()}
+
+    # Generate the completion using OpenAI
     openai_client = openai.OpenAI(api_key=get_key())
     response = openai_client.chat.completions.create(
         model=model,
@@ -55,10 +59,10 @@ def query_gpt(
             },
             {
                 "role": "user",
-                "content": "Your answer should be correct JSON using in the following schema. And "
-                "everything should be short and succinct with no emoji. Here is the answer schema"
-                "as a template:\n"
-                f"{AbstractLLMResponse.model_json_schema()['properties']}",
+                "content": "Your answer should be correct JSON using in the following JSON schema. "
+                "Everything should be short and succinct with no emoji: This is a JSON schema, so "
+                "replace the title and type dict with the actual data: \n"
+                f"{schema}",
             },
         ],
         max_tokens=1000,
