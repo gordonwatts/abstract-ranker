@@ -10,7 +10,11 @@ It worked surprisingly well. Enough to make me wonder if I shouldn't be using so
 
 ## Other info
 
-Using gpt 3.5 turbo cost pennies to do this, and 4 turbo cost about $1.60 US. I didn't get as far as comparing the results of the two to know if the 3.5 was good enough.
+Using gpt 3.5 turbo cost pennies to do this, and 4 turbo cost about $1.60 US. I didn't get as far as comparing the results of the two to know if the 3.5 was good enough. And the updated models are even cheaper. 4o is $0.70, and 4o-mini is just 2 cents.
+
+### Adding a new model
+
+The file `llm_utils.py` contains a list of all models and how they are called. If you are adding a model from OpenAI or from hugging-face, it could be all you need to do is add a new entry to the dictionary in `llm_utils.py`. Worst case you will need to add a new query method - but you can use the hugging face and OpenAI ones as models for how to do this.
 
 ## Tyring it out
 
