@@ -11,6 +11,8 @@ def test_dispatch():
             keywords=["hi"],
             interest="high",
             explanation="hi",
+            confidence=0.5,
+            unknown_terms=["hi"],
         )
 
         context = {"title": "hi"}
@@ -40,6 +42,8 @@ def test_cache(cache_dir):
             keywords=["hi"],
             interest="high",
             explanation="hi",
+            confidence=0.5,
+            unknown_terms=["hi"],
         )
 
         context = {"title": "hi-unique-test"}
