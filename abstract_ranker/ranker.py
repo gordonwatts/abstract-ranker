@@ -51,7 +51,7 @@ def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, N
 
 
 def process_contributions(
-    event_url: str, prompt: str, model: str, progress_bar: bool
+    event_url: str, prompt: str, model: str, use_cache: bool, progress_bar: bool
 ) -> None:
     """
     Process contributions from the event URL and write them to a CSV file.
@@ -76,7 +76,7 @@ def process_contributions(
 
     # Open the CSV file in write mode
     csv_file = generate_ranking_csv_filename(data)
-    with open(csv_file, mode="w", newline="") as file:
+    with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
 
         # Write the header row
@@ -91,6 +91,8 @@ def process_contributions(
                 "Keywords",
                 "Interest",
                 "Type",
+                "Confidence",
+                "Unknown Terms",
             ]
         )
 
@@ -114,6 +116,7 @@ def process_contributions(
                             "not_interested_topics": not_interested_topics,
                         },
                         model,
+                        use_cache,
                     )
 
                     # Write the row to the CSV file
@@ -136,6 +139,8 @@ def process_contributions(
                             summary.keywords,
                             as_a_number(summary.interest),
                             contrib.type,
+                            summary.confidence,
+                            summary.unknown_terms,
                         ]
                     )
                 if task is not None:
@@ -149,7 +154,13 @@ def cmd_rank(args):
     # Example usage
     event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
 
-    process_contributions(event_url, abstract_ranking_prompt, args.model, args.v == 0)
+    process_contributions(
+        event_url,
+        abstract_ranking_prompt,
+        args.model,
+        not args.ignore_cache,
+        args.v == 0,
+    )
 
 
 def main():
@@ -174,6 +185,12 @@ def main():
         action="count",
         default=0,
         help="Increase output verbosity",
+    )
+    rank_parser.add_argument(
+        "--ignore-cache",
+        action="store_true",
+        help="Ignore the cache and re-run the queries",
+        default=False,
     )
     rank_parser.set_defaults(func=cmd_rank)
 

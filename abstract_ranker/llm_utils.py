@@ -57,8 +57,10 @@ def get_llm_models() -> List[str]:
 
 
 @memory_llm_query.cache
-def query_llm(
-    prompt: str, context: Dict[str, Union[str, List[str]]], model: str
+def _query_llm(
+    prompt: str,
+    context: Dict[str, Union[str, List[str]]],
+    model: str,
 ) -> AbstractLLMResponse:
     """Query the given LLM for a summary.
 
@@ -71,3 +73,25 @@ def query_llm(
         dict: The results, parsed as json.
     """
     return _llm_dispatch[model](prompt, context)
+
+
+def query_llm(
+    prompt: str,
+    context: Dict[str, Union[str, List[str]]],
+    model: str,
+    use_cache: bool = True,
+) -> AbstractLLMResponse:
+    """Query the given LLM for a summary.
+
+    Args:
+        prompt (str): Prompt to use
+        context (Dict[str, str]): The context and instructions
+        model (str): The name of the model to use, short hand.
+
+    Returns:
+        dict: The results, parsed as json.
+    """
+    if not use_cache:
+        return _query_llm.__wrapped__(prompt, context, model)
+    else:
+        return _query_llm(prompt, context, model)

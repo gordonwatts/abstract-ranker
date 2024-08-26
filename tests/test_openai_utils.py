@@ -31,7 +31,8 @@ def test_openai_simple_call():
                     choice(
                         message=message(
                             content='{"summary": "hi", "experiment": "", "keywords": [], '
-                            '"interest": "", "explanation": ""}'
+                            '"interest": "", "explanation": "", "confidence": 0.5, '
+                            '"unknown_terms": []}'
                         )
                     )
                 ]
@@ -75,7 +76,8 @@ def test_openai_json_header_trailer_removal():
                     choice(
                         message=message(
                             content='json\n{"summary": "hi", "experiment": "", "keywords": [], '
-                            '"interest": "", "explanation": ""}```'
+                            '"interest": "", "explanation": "", "confidence": 0.5, '
+                            '"unknown_terms": []}```'
                         )
                     )
                 ]

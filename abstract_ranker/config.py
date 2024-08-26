@@ -11,7 +11,7 @@ not by summarizing the abstract and ranking it according to topics I'm intereste
 interested_topics = [
     "Hidden Sector Physics",
     "Long Lived Particles (Exotics or RPV SUSY)",
-    "Analysis techniques and methods and frameworks, particularly those based around python or "
+    "Analysis techniques and methods and frameworks, columnar analysis, particularly those based around python or "
     "ROOT's DataFrame (RDF)",
     "Machine Learning and AI for particle physics",
     "The ServiceX tool",
