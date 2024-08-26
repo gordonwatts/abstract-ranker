@@ -36,6 +36,20 @@ class AbstractLLMResponse(BaseModel):
         "single sentence, 100 words maximum.",
     )
 
+    # How confident is the AI of its interest assignment?
+    confidence: float = Field(
+        ...,
+        title="A float from 0 to 1 representing the confidence in the interest level.",
+    )
+
+    # Any terms in the abstract that the LLM does not know, but would probably make
+    # the confidence level higher.
+    unknown_terms: List[str] = Field(
+        ...,
+        title="Short JSON list of terms (strings) in the abstract whose definition would "
+        "improve your confidence.",
+    )
+
 
 # Please format your with a summary  (One line, terse, summary of the abstract that
 # does not repeat the title. It should add extra information beyond the title, and should mention
