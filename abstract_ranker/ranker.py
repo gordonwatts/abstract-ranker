@@ -106,43 +106,49 @@ def process_contributions(
                 else None
             )
             for contrib in contributions(data):
-                if not (contrib.description is None or len(contrib.description) < 10):
-                    summary = query_llm(
-                        prompt,
-                        {
-                            "title": contrib.title,
-                            "abstract": contrib.description,
-                            "interested_topics": interested_topics,
-                            "not_interested_topics": not_interested_topics,
-                        },
-                        model,
-                        use_cache,
+                abstract_text = (
+                    contrib.description
+                    if not (
+                        contrib.description is None or len(contrib.description) < 10
                     )
+                    else "Not given"
+                )
+                summary = query_llm(
+                    prompt,
+                    {
+                        "title": contrib.title,
+                        "abstract": abstract_text,
+                        "interested_topics": interested_topics,
+                        "not_interested_topics": not_interested_topics,
+                    },
+                    model,
+                    use_cache,
+                )
 
-                    # Write the row to the CSV file
-                    writer.writerow(
-                        [
-                            (
-                                contrib.startDate.get_local_datetime()[0]
-                                if contrib.startDate
-                                else ""
-                            ),
-                            (
-                                contrib.startDate.get_local_datetime()[1]
-                                if contrib.startDate
-                                else ""
-                            ),
-                            contrib.roomFullname if contrib.roomFullname else "",
-                            contrib.title,
-                            summary.summary,
-                            summary.experiment,
-                            summary.keywords,
-                            as_a_number(summary.interest),
-                            contrib.type,
-                            summary.confidence,
-                            summary.unknown_terms,
-                        ]
-                    )
+                # Write the row to the CSV file
+                writer.writerow(
+                    [
+                        (
+                            contrib.startDate.get_local_datetime()[0]
+                            if contrib.startDate
+                            else ""
+                        ),
+                        (
+                            contrib.startDate.get_local_datetime()[1]
+                            if contrib.startDate
+                            else ""
+                        ),
+                        contrib.roomFullname if contrib.roomFullname else "",
+                        contrib.title,
+                        summary.summary,
+                        summary.experiment,
+                        summary.keywords,
+                        as_a_number(summary.interest),
+                        contrib.type,
+                        summary.confidence,
+                        summary.unknown_terms,
+                    ]
+                )
                 if task is not None:
                     progress.update(task, advance=1)
 
