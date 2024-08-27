@@ -176,7 +176,13 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command", help="sub-command help")
 
-    rank_parser = subparsers.add_parser("rank", help="Rank contributions")
+    rank_parser = subparsers.add_parser(
+        "rank",
+        help="Rank contributions",
+        description="""
+    Rank the contributions of an Indico event and write them to a CSV file by interest from low (1) to high (3)
+    Includes a summary of the contribution's abstract if there was an abstract provided.""",
+    )
     rank_parser.add_argument("indico_url", type=str, help="URL of the indico event")
     rank_parser.add_argument(
         "--model",
