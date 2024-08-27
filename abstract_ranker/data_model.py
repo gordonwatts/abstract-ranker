@@ -9,7 +9,7 @@ class AbstractLLMResponse(BaseModel):
     summary: str = Field(
         ...,
         title="A short summary of the abstract that does not repeat the title, no more than 200 "
-        "characters.",
+        "characters. If there is no abstract provided, just repeat the title.",
     )
 
     # The most likely experiment this is associated with
@@ -26,7 +26,9 @@ class AbstractLLMResponse(BaseModel):
 
     # What is the interest level here?
     interest: str = Field(
-        ..., title="'high', 'medium', or 'low': how interesting I'll find the abstract."
+        ...,
+        title="The string 'high', 'medium', or 'low' indicating how interesting I'll find "
+        "the abstract.",
     )
 
     # A short explanation of why the interest level is what it is
@@ -49,14 +51,3 @@ class AbstractLLMResponse(BaseModel):
         title="Short JSON list of terms (strings) in the abstract whose definition would "
         "improve your confidence.",
     )
-
-
-# Please format your with a summary  (One line, terse, summary of the abstract that
-# does not repeat the title. It should add extra information beyond the title, and should mention
-# any key outcomes that are present in the abstract), an experiment name (If you can guess the
-# experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here.
-# Otherwise
-# leave it blank), a list of keywords (json-list of 4 or less keywords or phrases describing topics
-# in the below abstract and title, comma separated, pulled from my list of interests), and my
-# expected interest(put: "high" (hits several of the interests listed above), "medium" (hits one
-# interest), or "low" (hits a not interest). Be harsh, my time is valuable).

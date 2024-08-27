@@ -75,6 +75,7 @@ def query_gpt(
     # Parse the YAML response
     r = response.choices[0].message.content
     if r is not None:
+        # Remove leading text or trailing text
         start_bracket = r.find("{")
         if start_bracket != -1:
             logging.debug(f"Removing header from response: {r[:start_bracket]}")
@@ -84,11 +85,17 @@ def query_gpt(
         if end_bracket != -1:
             logging.debug(f"Removing trailer from response: {r[end_bracket:]}")
             r = r[: end_bracket + 1]
+
+        # Escape any latex in there
+        r = r.replace("\\", "\\\\")
+
+        # Parse the response
         try:
             parsed_response = AbstractLLMResponse.model_validate_json(r)
         except Exception as e:
             logging.error(f"Bad JSON format for '{context['title']}': {r} ({e})")
             raise
+
     else:
         parsed_response = AbstractLLMResponse(
             summary="No response from {model}.",
@@ -96,6 +103,8 @@ def query_gpt(
             keywords=[],
             interest="",
             explanation="",
+            confidence=0.0,
+            unknown_terms=[],
         )
 
     return parsed_response

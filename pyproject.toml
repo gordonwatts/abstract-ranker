@@ -21,15 +21,13 @@ name = "conference-llm-tools"
 dynamic = ["version"]
 description = 'Tools to work with conferences in indico with LLMs as an assistant'
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 license = "MIT"
 keywords = []
 authors = [{ name = "Gordon Watts", email = "gwatts@uw.edu" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
