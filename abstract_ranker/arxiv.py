@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List
-
+import logging
 import arxiv
 
 
@@ -27,5 +27,6 @@ def load_arxiv_abstract(topic_list: List[str]) -> List[arxiv.Result]:
     client = arxiv.Client()
     results = client.results(search)
     all_results = list(results)
+    logging.info(f"Found {len(all_results)} results for topics {topic_list}")
 
     return all_results
