@@ -1,11 +1,14 @@
 {
   "cSpell.words": [
+    "ACAT",
     "addinivalue",
     "arxiv",
     "autouse",
+    "Axion",
     "Calo",
     "dtype",
     "filelock",
+    "Fischler",
     "generalisation",
     "generalise",
     "generalised",
@@ -23,8 +26,10 @@
     "pydantic",
     "pytestmark",
     "pytz",
+    "Srednicki",
     "SUSY",
     "tzlocal",
-    "Unet"
+    "Unet",
+    "Zhitnitsky"
   ]
 }
