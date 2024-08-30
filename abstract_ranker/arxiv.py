@@ -35,7 +35,7 @@ def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv
 
     search = arxiv.Search(
         query=query_string,
-        max_results=100,
+        max_results=400,
         sort_by=arxiv.SortCriterion.SubmittedDate,
     )
 
