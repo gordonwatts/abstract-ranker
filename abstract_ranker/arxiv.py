@@ -29,7 +29,7 @@ def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv
     the_date = what_day.strftime('%Y%m%d')
     the_end_date = (what_day + timedelta(days=1)).strftime('%Y%m%d')
     query_string = (
-        f"cat:{" OR cat:".join(topic_list)} AND submittedDate:[{the_date} TO {the_end_date}]"
+        f"(cat:{" OR cat:".join(topic_list)}) AND submittedDate:[{the_date} TO {the_end_date}]"
         )
     logging.info(f"arXiv Query string: {query_string} for day {what_day}")
 
