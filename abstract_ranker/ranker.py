@@ -86,8 +86,8 @@ def process_contributions(
 
     for contrib in contributions:
         abstract_text = (
-            contrib.description
-            if not (contrib.description is None or len(contrib.description) < 10)
+            contrib.abstract
+            if not (contrib.abstract is None or len(contrib.abstract) < 10)
             else "Not given"
         )
         summary = query_llm(
@@ -117,7 +117,7 @@ def cmd_rank_indico(args):
         contributions = progress_bar(number_contributions, contributions)
 
     rankings = process_contributions(
-        event_url,
+        contributions,
         abstract_ranking_prompt,
         args.model,
         not args.ignore_cache,
@@ -128,15 +128,16 @@ def cmd_rank_indico(args):
 
 
 def cmd_rank_arxiv(args):
-    event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
+    raise NotImplementedError()
+    # event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
 
-    process_contributions(
-        event_url,
-        abstract_ranking_prompt,
-        args.model,
-        not args.ignore_cache,
-        args.v == 0,
-    )
+    # process_contributions(
+    #     event_url,
+    #     abstract_ranking_prompt,
+    #     args.model,
+    #     not args.ignore_cache,
+    #     args.v == 0,
+    # )
 
 
 def main():

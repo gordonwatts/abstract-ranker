@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import Any, Dict, Generator, Tuple
+from typing import Any, Dict, Generator, Optional, Tuple
 
 import pytz
 from joblib import Memory
@@ -26,7 +26,7 @@ class IndicoDate(BaseModel):
     # The timezone
     tz: str
 
-    def get_local_datetime(self) -> Tuple[str, str]:
+    def get_local_datetime(self) -> datetime:
         """Returns the date and time in the local timezone, taking into account
         `self.tz` and `self.date` and `self.time`.
 
@@ -44,10 +44,11 @@ class IndicoDate(BaseModel):
 
         # Now, create that in local time.
         local_talk_time = talk_time.astimezone(get_localzone())
+        return local_talk_time
 
-        local_date = local_talk_time.strftime("%Y-%m-%d")
-        local_time = local_talk_time.strftime("%I:%M:%S %p")
-        return local_date, local_time
+        # local_date = local_talk_time.strftime("%Y-%m-%d")
+        # local_time = local_talk_time.strftime("%I:%M:%S %p")
+        # return local_date, local_time
 
 
 @memory_indico.cache
@@ -103,6 +104,27 @@ def load_indico_json(event_url: str) -> Dict[str, Any]:
     return _load_indico_json(node, meeting_id)  # type: ignore
 
 
+class IndicoContribution(BaseModel):
+    "And indico contribution"
+    # Title of the talk
+    title: str
+
+    # Abstract of the talk
+    description: str
+
+    # Poster, plenary, etc.
+    type: Optional[str]
+
+    # Start date of the talk
+    startDate: Optional[IndicoDate]
+
+    # End date of the talk
+    endDate: Optional[IndicoDate]
+
+    # The room
+    roomFullname: Optional[str]
+
+
 def indico_contributions(
     event_data: Dict[str, Any]
 ) -> Generator[Contribution, None, None]:
@@ -115,4 +137,20 @@ def indico_contributions(
         Dict[str, Any]: The contribution data.
     """
     for contrib in event_data["contributions"]:
-        yield Contribution(**contrib)
+        item = IndicoContribution(**contrib)
+        start_date = (
+            item.startDate.get_local_datetime() if item.startDate is not None else None
+        )
+        end_date = (
+            item.endDate.get_local_datetime() if item.endDate is not None else None
+        )
+
+        contribution = Contribution(
+            title=item.title,
+            abstract=item.description,
+            type=item.type,
+            startDate=start_date,
+            endDate=end_date,
+            roomFullname=item.roomFullname,
+        )
+        yield contribution

@@ -4,23 +4,23 @@ from datetime import datetime
 
 
 class Contribution(BaseModel):
-    "And indico contribution"
+    "A contribution we are going to evaluate"
     # Title of the talk
     title: str
 
     # Abstract of the talk
-    description: str
+    abstract: str
 
     # Poster, plenary, etc.
     type: Optional[str]
 
-    # Start date of the talk
+    # Time of the abstract/talk/paper
     startDate: Optional[datetime]
 
-    # End date of the talk
+    # End date of the talk (or same as startDate)
     endDate: Optional[datetime]
 
-    # The room
+    # The room metadata
     roomFullname: Optional[str]
 
 
