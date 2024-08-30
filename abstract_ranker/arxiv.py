@@ -1,9 +1,16 @@
 from datetime import datetime
-from typing import List
+from typing import Generator, List
 import logging
 import arxiv
+from joblib import Memory
+
+from abstract_ranker.config import CACHE_DIR
+from abstract_ranker.data_model import Contribution
+
+memory_arxiv = Memory(CACHE_DIR / "arxiv", verbose=0)
 
 
+@memory_arxiv.cache
 def load_arxiv_abstract(topic_list: List[str]) -> List[arxiv.Result]:
     """Loads and returns basic info from the archive for a set
     of topics.
@@ -30,3 +37,18 @@ def load_arxiv_abstract(topic_list: List[str]) -> List[arxiv.Result]:
     logging.info(f"Found {len(all_results)} results for topics {topic_list}")
 
     return all_results
+
+
+def arxiv_contributions(
+    event_data: List[arxiv.Result]
+) -> Generator[Contribution, None, None]:
+
+    for contrib in event_data:
+        yield Contribution(
+            title=contrib.title,
+            abstract=contrib.summary,
+            type=None,
+            startDate=contrib.updated,
+            endDate=contrib.updated,
+            roomFullname=None,
+        )
