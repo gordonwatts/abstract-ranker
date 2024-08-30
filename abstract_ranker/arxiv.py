@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Generator, List
 import logging
 import arxiv
@@ -24,13 +24,21 @@ def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv
     assert len(topic_list) > 0, "No topics provided"
 
     # Search for the 10 most recent articles matching the keyword "quantum."
+    # Note the capitalization: logic operand words and the specifiers are case-sensitive!!
     the_date = what_day.strftime('%Y%m%d')
+    the_end_date = (what_day + timedelta(days=1)).strftime('%Y%m%d')
+    query_string = (
+        f"cat:{" OR cat:".join(topic_list)} AND submittedDate:[{the_date} TO {the_end_date}]"
+        )
+    logging.info(f"arXiv Query string: {query_string}")
+
     search = arxiv.Search(
-        query=f"cat:{" OR cat:".join(topic_list)} and submittedDate:[{the_date} TO {the_date}]",
+        query=query_string,
         max_results=100,
         sort_by=arxiv.SortCriterion.SubmittedDate,
     )
 
+    # DO the search
     client = arxiv.Client()
     results = client.results(search)
     all_results = list(results)

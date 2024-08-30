@@ -23,7 +23,7 @@ def test_load_single_topic(MockClient, MockSearch):
 
     assert len(r) == 10
     assert MockSearch.call_count == 1
-    assert MockSearch.call_args[1]["query"].startswith("cat:hep-ex and submittedDate")
+    assert MockSearch.call_args[1]["query"].startswith("cat:hep-ex AND submittedDate")
 
 
 @patch("abstract_ranker.arxiv.arxiv.Search")
@@ -40,7 +40,7 @@ def test_load_two_topics_topic(MockClient, MockSearch):
 
     assert MockSearch.call_count == 1
     assert MockSearch.call_args[1]["query"].startswith(
-        "cat:hep-ex OR cat:hep-ph and submittedDate"
+        "cat:hep-ex OR cat:hep-ph AND submittedDate"
     )
 
 
