@@ -12,7 +12,9 @@ memory_arxiv = Memory(CACHE_DIR / "arxiv", verbose=0)
 
 
 @memory_arxiv.cache
-def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv.Result]:
+def load_arxiv_abstract(
+    topic_list: List[str], what_day: datetime
+) -> List[arxiv.Result]:
     """Loads and returns basic info from the archive for a set
     of topics.
 
@@ -26,11 +28,12 @@ def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv
 
     # Search for the 10 most recent articles matching the keyword "quantum."
     # Note the capitalization: logic operand words and the specifiers are case-sensitive!!
-    the_date = what_day.strftime('%Y%m%d')
-    the_end_date = (what_day + timedelta(days=1)).strftime('%Y%m%d')
+    the_date = what_day.strftime("%Y%m%d")
+    the_end_date = (what_day + timedelta(days=1)).strftime("%Y%m%d")
     query_string = (
-        f"(cat:{" OR cat:".join(topic_list)}) AND submittedDate:[{the_date} TO {the_end_date}]"
-        )
+        f'(cat:{" OR cat:".join(topic_list)}) '
+        f"AND submittedDate:[{the_date} TO {the_end_date}]"
+    )
     logging.info(f"arXiv Query string: {query_string} for day {what_day}")
 
     search = arxiv.Search(
@@ -49,7 +52,7 @@ def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv
 
 
 def arxiv_contributions(
-    event_data: List[arxiv.Result]
+    event_data: List[arxiv.Result],
 ) -> Generator[Contribution, None, None]:
 
     for contrib in event_data:
