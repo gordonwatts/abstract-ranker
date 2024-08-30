@@ -5,7 +5,11 @@ from pathlib import Path
 from typing import Generator, Tuple
 from datetime import datetime, timedelta
 
-from abstract_ranker.arxiv import arxiv_contributions, load_arxiv_abstract
+from abstract_ranker.arxiv import (
+    arxiv_contributions,
+    arxiv_ranked_filename,
+    load_arxiv_abstract,
+)
 from abstract_ranker.config import (
     abstract_ranking_prompt,
     interested_topics,
@@ -107,17 +111,6 @@ def process_contributions(
         yield contrib, summary
 
 
-def cmd_rank_indico(args):
-    # Build the pipe-line.
-    indico_data = load_indico_json(args.indico_url)
-    number_contributions = len(indico_data["contributions"])
-    contributions = indico_contributions(indico_data)
-
-    csv_file = generate_ranking_csv_filename(indico_data)
-
-    _generate_ranking_results(args, number_contributions, contributions, csv_file)
-
-
 def _generate_ranking_results(
     args,
     number_contributions: int,
@@ -146,18 +139,31 @@ def _generate_ranking_results(
     dump_to_csv_file(csv_file, rankings, args.v == 0)
 
 
+def cmd_rank_indico(args):
+    # Build the pipe-line.
+    indico_data = load_indico_json(args.indico_url)
+    number_contributions = len(indico_data["contributions"])
+    contributions = indico_contributions(indico_data)
+
+    csv_file = generate_ranking_csv_filename(indico_data)
+
+    _generate_ranking_results(args, number_contributions, contributions, csv_file)
+
+
 def cmd_rank_arxiv(args):
     """Driver to rank the arxiv abstracts
 
     Args:
         args (): Command line arguments
     """
-    logging.info(f"Ranking arXiv abstracts for categories {args.arxiv_categories}")
-    arxiv_data = load_arxiv_abstract(
-        args.arxiv_categories, datetime.now() - timedelta(days=1)
-    )
+    # Get yesterday's date - that was when things were submitted.
+    the_date = datetime.now() - timedelta(days=1)
+    the_date = the_date.replace(hour=0, minute=0, second=1, microsecond=0)
+
+    # Now load in the submissions.
+    arxiv_data = load_arxiv_abstract(args.arxiv_categories, the_date)
     contributions = arxiv_contributions(arxiv_data)
-    csv_file = Path("arxiv.csv")
+    csv_file = arxiv_ranked_filename(the_date, args.arxiv_categories)
 
     _generate_ranking_results(args, len(arxiv_data), contributions, csv_file)
 
