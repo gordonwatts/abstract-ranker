@@ -3,7 +3,9 @@ import csv
 import logging
 from pathlib import Path
 from typing import Generator, Tuple
+from datetime import datetime, timedelta
 
+from abstract_ranker.arxiv import arxiv_contributions, load_arxiv_abstract
 from abstract_ranker.config import (
     abstract_ranking_prompt,
     interested_topics,
@@ -106,12 +108,30 @@ def process_contributions(
 
 
 def cmd_rank_indico(args):
-    event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
-
     # Build the pipe-line.
-    indico_data = load_indico_json(event_url)
+    indico_data = load_indico_json(args.indico_url)
     number_contributions = len(indico_data["contributions"])
     contributions = indico_contributions(indico_data)
+
+    csv_file = generate_ranking_csv_filename(indico_data)
+
+    _generate_ranking_results(args, number_contributions, contributions, csv_file)
+
+
+def _generate_ranking_results(
+    args,
+    number_contributions: int,
+    contributions: Generator[Contribution, None, None],
+    csv_file: Path,
+):
+    """Generate the ranking results.
+
+    Args:
+        args (_type_): Command line arguments for common steering parameters.
+        number_contributions (int): The total number of contributions.
+        contributions (Generator[Contribution, None, None]): The list of contributions.
+        csv_file (Path): Where we will write the csv file.
+    """
 
     if args.v == 0:
         contributions = progress_bar(number_contributions, contributions)
@@ -123,21 +143,23 @@ def cmd_rank_indico(args):
         not args.ignore_cache,
     )
 
-    csv_file = generate_ranking_csv_filename(indico_data)
     dump_to_csv_file(csv_file, rankings, args.v == 0)
 
 
 def cmd_rank_arxiv(args):
-    raise NotImplementedError()
-    # event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
+    """Driver to rank the arxiv abstracts
 
-    # process_contributions(
-    #     event_url,
-    #     abstract_ranking_prompt,
-    #     args.model,
-    #     not args.ignore_cache,
-    #     args.v == 0,
-    # )
+    Args:
+        args (): Command line arguments
+    """
+    logging.info(f"Ranking arXiv abstracts for categories {args.arxiv_categories}")
+    arxiv_data = load_arxiv_abstract(
+        args.arxiv_categories, datetime.now() - timedelta(days=1)
+    )
+    contributions = arxiv_contributions(arxiv_data)
+    csv_file = Path("arxiv.csv")
+
+    _generate_ranking_results(args, len(arxiv_data), contributions, csv_file)
 
 
 def main():
