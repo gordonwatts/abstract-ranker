@@ -6,6 +6,7 @@
     "autouse",
     "Axion",
     "Calo",
+    "CUDA",
     "dtype",
     "filelock",
     "Fischler",
@@ -22,6 +23,7 @@
     "localzone",
     "MATHUSLA",
     "modifyitems",
+    "nvcc",
     "openai",
     "pydantic",
     "pytestmark",
@@ -30,6 +32,7 @@
     "SUSY",
     "tzlocal",
     "Unet",
+    "venv",
     "Zhitnitsky"
   ]
 }
