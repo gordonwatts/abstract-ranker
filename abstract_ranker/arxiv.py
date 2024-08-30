@@ -11,7 +11,7 @@ memory_arxiv = Memory(CACHE_DIR / "arxiv", verbose=0)
 
 
 @memory_arxiv.cache
-def load_arxiv_abstract(topic_list: List[str]) -> List[arxiv.Result]:
+def load_arxiv_abstract(topic_list: List[str], what_day: datetime) -> List[arxiv.Result]:
     """Loads and returns basic info from the archive for a set
     of topics.
 
@@ -24,10 +24,10 @@ def load_arxiv_abstract(topic_list: List[str]) -> List[arxiv.Result]:
     assert len(topic_list) > 0, "No topics provided"
 
     # Search for the 10 most recent articles matching the keyword "quantum."
-    today = datetime.now().strftime('%Y%m%d')
+    the_date = what_day.strftime('%Y%m%d')
     search = arxiv.Search(
-        query=f"cat:{" OR cat:".join(topic_list)} and submittedDate:[{today} TO {today}]",
-        max_results=10,
+        query=f"cat:{" OR cat:".join(topic_list)} and submittedDate:[{the_date} TO {the_date}]",
+        max_results=100,
         sort_by=arxiv.SortCriterion.SubmittedDate,
     )
 

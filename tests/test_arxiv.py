@@ -1,3 +1,4 @@
+from datetime import datetime
 import pickle
 
 import pytest
@@ -18,7 +19,7 @@ def test_load_single_topic(MockClient, MockSearch):
         MagicMock(spec=arxiv.Result) for _ in range(10)
     ]
 
-    r = load_arxiv_abstract(["hep-ex"])
+    r = load_arxiv_abstract(["hep-ex"], datetime.now())
 
     assert len(r) == 10
     assert MockSearch.call_count == 1
@@ -35,7 +36,7 @@ def test_load_two_topics_topic(MockClient, MockSearch):
         MagicMock(spec=arxiv.Result) for _ in range(10)
     ]
 
-    load_arxiv_abstract(["hep-ex", "hep-ph"])
+    load_arxiv_abstract(["hep-ex", "hep-ph"], datetime.now())
 
     assert MockSearch.call_count == 1
     assert MockSearch.call_args[1]["query"].startswith(
