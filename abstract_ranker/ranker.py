@@ -13,13 +13,13 @@ from abstract_ranker.config import (
 )
 from abstract_ranker.data_model import AbstractLLMResponse, Contribution
 from abstract_ranker.indico import (
+    generate_ranking_csv_filename,
     indico_contributions,
     load_indico_json,
 )
 from abstract_ranker.llm_utils import get_llm_models, query_llm
 from abstract_ranker.utils import (
     as_a_number,
-    generate_ranking_csv_filename,
     progress_bar,
 )
 

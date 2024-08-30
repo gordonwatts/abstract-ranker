@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 import re
 from typing import Any, Dict, Generator, Optional, Tuple
 
@@ -154,3 +155,17 @@ def indico_contributions(
             roomFullname=item.roomFullname,
         )
         yield contribution
+
+
+def generate_ranking_csv_filename(event: Dict[str, Any]) -> Path:
+    """Build a CSV filename for the summary of the abstracts and ranking
+    from an indico event.
+
+        Format: "<year>-<monday>-<day> <title>.csv"
+    Args:
+        event (Dict[str, Any]): The indico data from the event
+
+    Returns:
+        str: valid filename for the CSV file
+    """
+    return Path(f"{event['startDate']['date']} - {event['title']}.csv")
