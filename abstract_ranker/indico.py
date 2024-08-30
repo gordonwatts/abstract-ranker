@@ -1,6 +1,6 @@
 from datetime import datetime
 import re
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Generator, Tuple
 
 import pytz
 from joblib import Memory
@@ -9,6 +9,7 @@ import requests
 from tzlocal import get_localzone
 
 from abstract_ranker.config import CACHE_DIR
+from abstract_ranker.data_model import Contribution
 
 memory_indico = Memory(CACHE_DIR / "indico", verbose=0)
 
@@ -100,3 +101,18 @@ def load_indico_json(event_url: str) -> Dict[str, Any]:
     # Example usage
     node, meeting_id = parse_indico_url(event_url)
     return _load_indico_json(node, meeting_id)  # type: ignore
+
+
+def indico_contributions(
+    event_data: Dict[str, Any]
+) -> Generator[Contribution, None, None]:
+    """Yields the contributions from the event data.
+
+    Args:
+        event_data (Dict[str, Any]): The event data.
+
+    Yields:
+        Dict[str, Any]: The contribution data.
+    """
+    for contrib in event_data["contributions"]:
+        yield Contribution(**contrib)
