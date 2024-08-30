@@ -1,14 +1,30 @@
-from typing import Any, Dict
+from typing import Generator, TypeVar
+
+from rich.progress import Progress
 
 
-def generate_ranking_csv_filename(event: Dict[str, Any]) -> str:
-    """Build a CSV filename for the summary of the abstracts and ranking.
+def as_a_number(interest: str) -> int:
+    """Convert the interest level to a number."""
 
-        Format: "<year>-<monday>-<day> <title>.csv"
-    Args:
-        event (Dict[str, Any]): The indico data from the event
+    if interest == "high":
+        return 3
+    elif interest == "medium":
+        return 2
+    elif interest == "low":
+        return 1
+    else:
+        return 0
 
-    Returns:
-        str: valid filename for the CSV file
-    """
-    return f"{event['startDate']['date']} - {event['title']}.csv"
+
+T = TypeVar("T")
+
+
+def progress_bar(
+    length: int, data: Generator[T, None, None]
+) -> Generator[T, None, None]:
+    """A progress bar for the indicating how close we are to being done."""
+    with Progress() as progress:
+        task = progress.add_task("Ranking contributions", total=length)
+        for contrib in data:
+            yield contrib
+            progress.update(task, advance=1)

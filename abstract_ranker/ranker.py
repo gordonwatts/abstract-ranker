@@ -1,82 +1,40 @@
 import argparse
 import csv
 import logging
-from typing import Any, Dict, Generator, Optional
+from pathlib import Path
+from typing import Generator, Tuple
+from datetime import datetime, timedelta
 
-from pydantic import BaseModel
-from rich.progress import Progress
-
+from abstract_ranker.arxiv import (
+    arxiv_contributions,
+    arxiv_ranked_filename,
+    load_arxiv_abstract,
+)
 from abstract_ranker.config import (
     abstract_ranking_prompt,
     interested_topics,
     not_interested_topics,
 )
-from abstract_ranker.indico import IndicoDate, load_indico_json
+from abstract_ranker.data_model import AbstractLLMResponse, Contribution
+from abstract_ranker.indico import (
+    generate_ranking_csv_filename,
+    indico_contributions,
+    load_indico_json,
+)
 from abstract_ranker.llm_utils import get_llm_models, query_llm
-from abstract_ranker.utils import generate_ranking_csv_filename
+from abstract_ranker.utils import (
+    as_a_number,
+    progress_bar,
+)
 
 
-class Contribution(BaseModel):
-    "And indico contribution"
-    # Title of the talk
-    title: str
-
-    # Abstract of the talk
-    description: str
-
-    # Poster, plenary, etc.
-    type: Optional[str]
-
-    # Start date of the talk
-    startDate: Optional[IndicoDate]
-
-    # End date of the talk
-    endDate: Optional[IndicoDate]
-
-    # The room
-    roomFullname: Optional[str]
-
-
-def contributions(event_data: Dict[str, Any]) -> Generator[Contribution, None, None]:
-    """Yields the contributions from the event data.
-
-    Args:
-        event_data (Dict[str, Any]): The event data.
-
-    Yields:
-        Dict[str, Any]: The contribution data.
-    """
-    for contrib in event_data["contributions"]:
-        yield Contribution(**contrib)
-
-
-def process_contributions(
-    event_url: str, prompt: str, model: str, use_cache: bool, progress_bar: bool
-) -> None:
-    """
-    Process contributions from the event URL and write them to a CSV file.
-
-    Args:
-        event_url (str): The URL of the event.
-        prompt (str): The prompt for summarizing the abstracts.
-        model(str): The LLM to use for summarization.
-        progress_bar (bool): Whether to show a progress bar.
-    """
-    data = load_indico_json(event_url)
-
-    def as_a_number(interest):
-        if interest == "high":
-            return 3
-        elif interest == "medium":
-            return 2
-        elif interest == "low":
-            return 1
-        else:
-            return 0
-
+def dump_to_csv_file(
+    output_filename: Path,
+    data: Generator[Tuple[Contribution, AbstractLLMResponse], None, None],
+    progress_bar: bool,
+):
     # Open the CSV file in write mode
-    csv_file = generate_ranking_csv_filename(data)
-    with open(csv_file, mode="w", newline="", encoding="utf-8") as file:
+    with output_filename.open(mode="w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
 
         # Write the header row
@@ -96,95 +54,125 @@ def process_contributions(
             ]
         )
 
-        # Iterate over the contributions and write each row
-        with Progress() as progress:
-            task = (
-                progress.add_task(
-                    "Ranking contributions", total=len(data["contributions"])
-                )
-                if progress_bar
-                else None
+        for contrib, summary in data:
+            # Write the row to the CSV file
+            writer.writerow(
+                [
+                    (
+                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
+                        if contrib.startDate
+                        else ""
+                    ),
+                    (
+                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
+                        if contrib.startDate
+                        else ""
+                    ),
+                    contrib.roomFullname if contrib.roomFullname else "",
+                    contrib.title,
+                    summary.summary,
+                    summary.experiment,
+                    summary.keywords,
+                    as_a_number(summary.interest),
+                    contrib.type,
+                    summary.confidence,
+                    summary.unknown_terms,
+                ]
             )
-            for contrib in contributions(data):
-                abstract_text = (
-                    contrib.description
-                    if not (
-                        contrib.description is None or len(contrib.description) < 10
-                    )
-                    else "Not given"
-                )
-                summary = query_llm(
-                    prompt,
-                    {
-                        "title": contrib.title,
-                        "abstract": abstract_text,
-                        "interested_topics": interested_topics,
-                        "not_interested_topics": not_interested_topics,
-                    },
-                    model,
-                    use_cache,
-                )
-
-                # Write the row to the CSV file
-                writer.writerow(
-                    [
-                        (
-                            contrib.startDate.get_local_datetime()[0]
-                            if contrib.startDate
-                            else ""
-                        ),
-                        (
-                            contrib.startDate.get_local_datetime()[1]
-                            if contrib.startDate
-                            else ""
-                        ),
-                        contrib.roomFullname if contrib.roomFullname else "",
-                        contrib.title,
-                        summary.summary,
-                        summary.experiment,
-                        summary.keywords,
-                        as_a_number(summary.interest),
-                        contrib.type,
-                        summary.confidence,
-                        summary.unknown_terms,
-                    ]
-                )
-                if task is not None:
-                    progress.update(task, advance=1)
-
     # Print a message indicating the CSV file has been created
-    logging.info(f"CSV file '{csv_file}' has been created.")
+    logging.info(f"CSV file '{output_filename}' has been created.")
 
 
-def cmd_rank(args):
-    # Example usage
-    event_url = args.indico_url  # "https://indico.cern.ch/event/1330797/contributions/"
+def process_contributions(
+    contributions: Generator[Contribution, None, None],
+    prompt: str,
+    model: str,
+    use_cache: bool,
+) -> Generator[Tuple[Contribution, AbstractLLMResponse], None, None]:
 
-    process_contributions(
-        event_url,
+    for contrib in contributions:
+        abstract_text = (
+            contrib.abstract
+            if not (contrib.abstract is None or len(contrib.abstract) < 10)
+            else "Not given"
+        )
+        summary = query_llm(
+            prompt,
+            {
+                "title": contrib.title,
+                "abstract": abstract_text,
+                "interested_topics": interested_topics,
+                "not_interested_topics": not_interested_topics,
+            },
+            model,
+            use_cache,
+        )
+
+        yield contrib, summary
+
+
+def _generate_ranking_results(
+    args,
+    number_contributions: int,
+    contributions: Generator[Contribution, None, None],
+    csv_file: Path,
+):
+    """Generate the ranking results.
+
+    Args:
+        args (_type_): Command line arguments for common steering parameters.
+        number_contributions (int): The total number of contributions.
+        contributions (Generator[Contribution, None, None]): The list of contributions.
+        csv_file (Path): Where we will write the csv file.
+    """
+
+    if args.v == 0:
+        contributions = progress_bar(number_contributions, contributions)
+
+    rankings = process_contributions(
+        contributions,
         abstract_ranking_prompt,
         args.model,
         not args.ignore_cache,
-        args.v == 0,
     )
+
+    dump_to_csv_file(csv_file, rankings, args.v == 0)
+
+
+def cmd_rank_indico(args):
+    # Build the pipe-line.
+    indico_data = load_indico_json(args.indico_url)
+    number_contributions = len(indico_data["contributions"])
+    contributions = indico_contributions(indico_data)
+
+    csv_file = generate_ranking_csv_filename(indico_data)
+
+    _generate_ranking_results(args, number_contributions, contributions, csv_file)
+
+
+def cmd_rank_arxiv(args):
+    """Driver to rank the arxiv abstracts
+
+    Args:
+        args (): Command line arguments
+    """
+    # Get yesterday's date - that was when things were submitted.
+    the_date = datetime.now() - timedelta(days=1)
+    the_date = the_date.replace(hour=0, minute=0, second=1, microsecond=0)
+
+    # Now load in the submissions.
+    arxiv_data = load_arxiv_abstract(args.arxiv_categories, the_date)
+    contributions = arxiv_contributions(arxiv_data)
+    csv_file = arxiv_ranked_filename(the_date, args.arxiv_categories)
+
+    _generate_ranking_results(args, len(arxiv_data), contributions, csv_file)
 
 
 def main():
     # Define a command-line parser.
     parser = argparse.ArgumentParser(description="Abstract Ranker")
     parser.set_defaults(func=lambda _: parser.print_usage())
-
-    subparsers = parser.add_subparsers(dest="command", help="sub-command help")
-
-    rank_parser = subparsers.add_parser(
-        "rank",
-        help="Rank contributions",
-        description="""
-    Rank the contributions of an Indico event and write them to a CSV file by interest from low (1) to high (3)
-    Includes a summary of the contribution's abstract if there was an abstract provided.""",
-    )
-    rank_parser.add_argument("indico_url", type=str, help="URL of the indico event")
-    rank_parser.add_argument(
+    parser.add_argument(
         "--model",
         "-m",
         type=str,
@@ -192,19 +180,46 @@ def main():
         choices=get_llm_models(),
         default="GPT4o",
     )
-    rank_parser.add_argument(
+    parser.add_argument(
         "-v",
         action="count",
         default=0,
         help="Increase output verbosity",
     )
-    rank_parser.add_argument(
+    parser.add_argument(
         "--ignore-cache",
         action="store_true",
         help="Ignore the cache and re-run the queries",
         default=False,
     )
-    rank_parser.set_defaults(func=cmd_rank)
+
+    subparsers = parser.add_subparsers(dest="command", help="sub-command help")
+
+    rank_indico_parser = subparsers.add_parser(
+        "rank_indico",
+        help="Rank contributions to an indico event",
+        description="""
+    Rank the contributions of an Indico event and write them to a CSV file by interest from
+    low (1) to high (3). Includes a summary of the contribution's abstract if there was an
+    abstract provided.""",
+    )
+    rank_indico_parser.add_argument(
+        "indico_url", type=str, help="URL of the indico event"
+    )
+    rank_indico_parser.set_defaults(func=cmd_rank_indico)
+
+    rank_arxiv_parser = subparsers.add_parser(
+        "rank_arxiv",
+        help="Rank contributions for arxiv categories",
+        description="""
+    Rank the contributions of the daily submissions on arxiv and write them to a CSV
+    file by interest from low (1) to high (3). Includes a summary of the
+    contribution's abstract.""",
+    )
+    rank_arxiv_parser.add_argument(
+        "arxiv_categories", type=str, nargs="+", help="List of arxiv categories"
+    )
+    rank_arxiv_parser.set_defaults(func=cmd_rank_arxiv)
 
     args = parser.parse_args()
 

@@ -1,5 +1,27 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
+from datetime import datetime
+
+
+class Contribution(BaseModel):
+    "A contribution we are going to evaluate"
+    # Title of the talk
+    title: str
+
+    # Abstract of the talk
+    abstract: str
+
+    # Poster, plenary, etc.
+    type: Optional[str]
+
+    # Time of the abstract/talk/paper
+    startDate: Optional[datetime]
+
+    # End date of the talk (or same as startDate)
+    endDate: Optional[datetime]
+
+    # The room metadata
+    roomFullname: Optional[str]
 
 
 class AbstractLLMResponse(BaseModel):
