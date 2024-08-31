@@ -23,6 +23,9 @@ class Contribution(BaseModel):
     # The room metadata
     roomFullname: Optional[str]
 
+    # URL to the item (talk, contribution, etc.)
+    url: Optional[str]
+
 
 class AbstractLLMResponse(BaseModel):
     "Result back from LLM grading of an abstract"

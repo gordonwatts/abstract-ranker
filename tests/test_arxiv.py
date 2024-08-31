@@ -46,7 +46,7 @@ def test_load_two_topics_topic(MockClient, MockSearch):
 
 @pytest.fixture()
 def arxiv_data():
-    with open("tests/hep-ex-10.pkl", "rb") as file:
+    with open("tests/data/hep-ex-10.pkl", "rb") as file:
         return pickle.load(file)
 
 
@@ -59,3 +59,5 @@ def test_contribution_conversion(arxiv_data):
         r[0].title == "Axion Dark Matter eXperiment around 3.3 μeV with "
         "Dine-Fischler-Srednicki-Zhitnitsky Discovery Ability"
     )
+    assert r[0].url is not None
+    assert r[0].url.startswith("http://arxiv.org/pdf")

@@ -24,6 +24,7 @@ def dump_to_csv_file(
                 "Room",
                 "Title",
                 "Summary",
+                "Url",
                 "Experiment",
                 "Keywords",
                 "Interest",
@@ -38,18 +39,19 @@ def dump_to_csv_file(
             writer.writerow(
                 [
                     (
-                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
+                        contrib.startDate.strftime("%Y-%m-%d")
                         if contrib.startDate
                         else ""
                     ),
                     (
-                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
+                        contrib.startDate.strftime("%H:%M:%S")
                         if contrib.startDate
                         else ""
                     ),
                     contrib.roomFullname if contrib.roomFullname else "",
                     contrib.title,
                     summary.summary,
+                    contrib.url,
                     summary.experiment,
                     summary.keywords,
                     as_a_number(summary.interest),
