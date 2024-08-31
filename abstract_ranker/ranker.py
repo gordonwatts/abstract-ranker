@@ -1,114 +1,14 @@
 import argparse
-import csv
 import logging
 from pathlib import Path
-from typing import Generator, Tuple
+from typing import Generator
 from datetime import datetime, timedelta
 
-from abstract_ranker.arxiv import (
-    arxiv_contributions,
-    arxiv_ranked_filename,
-    load_arxiv_abstract,
-)
 from abstract_ranker.config import (
     abstract_ranking_prompt,
-    interested_topics,
-    not_interested_topics,
 )
-from abstract_ranker.data_model import AbstractLLMResponse, Contribution
-from abstract_ranker.indico import (
-    generate_ranking_csv_filename,
-    indico_contributions,
-    load_indico_json,
-)
-from abstract_ranker.llm_utils import get_llm_models, query_llm
-from abstract_ranker.utils import (
-    as_a_number,
-    progress_bar,
-)
-
-
-def dump_to_csv_file(
-    output_filename: Path,
-    data: Generator[Tuple[Contribution, AbstractLLMResponse], None, None],
-    progress_bar: bool,
-):
-    # Open the CSV file in write mode
-    with output_filename.open(mode="w", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
-
-        # Write the header row
-        writer.writerow(
-            [
-                "Date",
-                "Time",
-                "Room",
-                "Title",
-                "Summary",
-                "Experiment",
-                "Keywords",
-                "Interest",
-                "Type",
-                "Confidence",
-                "Unknown Terms",
-            ]
-        )
-
-        for contrib, summary in data:
-            # Write the row to the CSV file
-            writer.writerow(
-                [
-                    (
-                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
-                        if contrib.startDate
-                        else ""
-                    ),
-                    (
-                        contrib.startDate.strftime("%Y-%m-%d %H:%M:%S")
-                        if contrib.startDate
-                        else ""
-                    ),
-                    contrib.roomFullname if contrib.roomFullname else "",
-                    contrib.title,
-                    summary.summary,
-                    summary.experiment,
-                    summary.keywords,
-                    as_a_number(summary.interest),
-                    contrib.type,
-                    summary.confidence,
-                    summary.unknown_terms,
-                ]
-            )
-    # Print a message indicating the CSV file has been created
-    logging.info(f"CSV file '{output_filename}' has been created.")
-
-
-def process_contributions(
-    contributions: Generator[Contribution, None, None],
-    prompt: str,
-    model: str,
-    use_cache: bool,
-) -> Generator[Tuple[Contribution, AbstractLLMResponse], None, None]:
-
-    for contrib in contributions:
-        abstract_text = (
-            contrib.abstract
-            if not (contrib.abstract is None or len(contrib.abstract) < 10)
-            else "Not given"
-        )
-        summary = query_llm(
-            prompt,
-            {
-                "title": contrib.title,
-                "abstract": abstract_text,
-                "interested_topics": interested_topics,
-                "not_interested_topics": not_interested_topics,
-            },
-            model,
-            use_cache,
-        )
-
-        yield contrib, summary
+from abstract_ranker.data_model import Contribution
+from abstract_ranker.llm_utils import get_llm_models
 
 
 def _generate_ranking_results(
@@ -125,6 +25,9 @@ def _generate_ranking_results(
         contributions (Generator[Contribution, None, None]): The list of contributions.
         csv_file (Path): Where we will write the csv file.
     """
+    from abstract_ranker.driver import process_contributions
+    from abstract_ranker.output import dump_to_csv_file
+    from abstract_ranker.utils import progress_bar
 
     if args.v == 0:
         contributions = progress_bar(number_contributions, contributions)
@@ -140,6 +43,12 @@ def _generate_ranking_results(
 
 
 def cmd_rank_indico(args):
+    from abstract_ranker.indico import (
+        generate_ranking_csv_filename,
+        indico_contributions,
+        load_indico_json,
+    )
+
     # Build the pipe-line.
     indico_data = load_indico_json(args.indico_url)
     number_contributions = len(indico_data["contributions"])
@@ -159,6 +68,12 @@ def cmd_rank_arxiv(args):
     # Get yesterday's date - that was when things were submitted.
     the_date = datetime.now() - timedelta(days=1)
     the_date = the_date.replace(hour=0, minute=0, second=1, microsecond=0)
+
+    from abstract_ranker.arxiv import (
+        arxiv_contributions,
+        arxiv_ranked_filename,
+        load_arxiv_abstract,
+    )
 
     # Now load in the submissions.
     arxiv_data = load_arxiv_abstract(args.arxiv_categories, the_date)
