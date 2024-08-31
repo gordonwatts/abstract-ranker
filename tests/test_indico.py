@@ -61,6 +61,7 @@ def test_good_contributions_conversion(cache_dir):
         contributions = list(indico_contributions(data))
 
         assert len(contributions) == 179
+        assert contributions[0].title == "ACAT 2024"
         assert any(
             c.title
             == "Rational-function interpolation from p-adic evaluations in scattering "
