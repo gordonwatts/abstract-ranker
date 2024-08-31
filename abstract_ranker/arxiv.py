@@ -63,6 +63,7 @@ def arxiv_contributions(
             startDate=contrib.updated,
             endDate=contrib.updated,
             roomFullname=None,
+            url=contrib.pdf_url,
         )
 
 

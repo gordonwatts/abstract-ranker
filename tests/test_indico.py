@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from abstract_ranker.indico import generate_ranking_csv_filename
+from abstract_ranker.indico import generate_ranking_csv_filename, indico_contributions
 
 
 def test_good_load(cache_dir):
@@ -45,3 +45,26 @@ def test_filename():
     event = {"startDate": {"date": "2024-06-24"}, "title": "ACAT 2024"}
 
     assert generate_ranking_csv_filename(event).name == "2024-06-24 - ACAT 2024.csv"
+
+
+def test_good_contributions_conversion(cache_dir):
+    text_json = Path("tests/data/1330797.json").read_text()
+    parsed_json = json.loads(text_json)
+
+    with patch("requests.get") as mock_get:
+        mock_get.return_value.json.return_value = parsed_json
+
+        from abstract_ranker.indico import load_indico_json
+
+        data = load_indico_json("https://indico.cern.ch/event/1330797")
+
+        contributions = list(indico_contributions(data))
+
+        assert len(contributions) == 179
+        assert (
+            contributions[0].title
+            == "Rational-function interpolation from p-adic evaluations in scattering "
+            "amplitude calculations"
+        )
+        assert contributions[0].url is not None
+        assert contributions[0].url.startswith("https://indico.cern.ch/event")

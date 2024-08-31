@@ -125,6 +125,9 @@ class IndicoContribution(BaseModel):
     # The room
     roomFullname: Optional[str]
 
+    # The URL to the contribution
+    url: Optional[str]
+
 
 def indico_contributions(
     event_data: Dict[str, Any]
@@ -153,6 +156,7 @@ def indico_contributions(
             startDate=start_date,
             endDate=end_date,
             roomFullname=item.roomFullname,
+            url=item.url,
         )
         yield contribution
 
