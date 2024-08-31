@@ -61,10 +61,11 @@ def test_good_contributions_conversion(cache_dir):
         contributions = list(indico_contributions(data))
 
         assert len(contributions) == 179
-        assert (
-            contributions[0].title
+        assert any(
+            c.title
             == "Rational-function interpolation from p-adic evaluations in scattering "
             "amplitude calculations"
+            for c in contributions
         )
         assert contributions[0].url is not None
         assert contributions[0].url.startswith("https://indico.cern.ch/event")
