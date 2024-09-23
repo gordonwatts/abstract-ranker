@@ -25,10 +25,8 @@ def query_gpt(prompt: str, context: Dict[str, str], model: str) -> AbstractLLMRe
     c_text = f"""Title: {context['title']}
 Abstract: {context['abstract']}"""
 
-    # Generate the completion using OpenAI GPT-3.5 Turbo
     openai_client = openai.OpenAI(api_key=get_key())
     response = openai_client.chat.completions.create(
-        # model="gpt-3.5-turbo",
         model=model,
         messages=[
             {
