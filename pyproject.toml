@@ -53,6 +53,7 @@ test = ["pytest", "black", "flake8"]
 
 [project.scripts]
 abstract_ranker = "abstract_ranker.ranker:main"
+llm_summarize = "abstract_ranker.summarize:main"
 
 [tool.hatch.envs.dev.scripts]
 check = "mypy --install-types --non-interactive {args:abstract_ranker tests}"
