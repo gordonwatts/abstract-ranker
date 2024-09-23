@@ -5,7 +5,7 @@ from joblib import Memory
 from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
 from abstract_ranker.local_llms import query_hugging_face
-from abstract_ranker.openai_utils import query_gpt
+from abstract_ranker.openai_utils import query_gpt, summarize_gpt
 
 memory_llm_query = Memory(CACHE_DIR / "llm_queries", verbose=0)
 
@@ -17,6 +17,10 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
     "phi3-mini": lambda prompt, context: query_hugging_face(
         prompt, context, "microsoft/Phi-3-mini-4k-instruct"
     ),
+}
+
+_llm_summary_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], str]] = {
+    "GPT4o": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4-turbo"),
 }
 
 
@@ -44,3 +48,14 @@ def query_llm(
         dict: The results, parsed as json.
     """
     return _llm_dispatch[model](prompt, context)
+
+
+def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> None:
+    """Summarize the given context with the given model.
+
+    Args:
+        prompt (str): The prompt to use.
+        context (Dict[str, str]): The context to use.
+        model (str): The model to use.
+    """
+    response = query_llm(prompt, context, model)

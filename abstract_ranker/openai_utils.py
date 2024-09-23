@@ -57,3 +57,44 @@ Abstract: {context['abstract']}"""
         )
 
     return parsed_response
+
+
+def summarize_gpt(prompt: str, context: Dict[str, str], model: str) -> str:
+    """Summarize the given context with the given model.
+
+    Args:
+        prompt (str): The prompt to use.
+        context (Dict[str, str]): The context to use.
+        model (str): The model to use.
+
+    Returns:
+        str: The summary.
+    """
+    # Build context:
+    c_text = f"""Meeting Minutes:
+{context['text']}
+    """
+
+    # Query the model
+    openai_client = openai.OpenAI(api_key=get_key())
+    response = openai_client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are a helpful assistant and expert in the field of experimental "
+                "particle physics and computational particle physics.",
+            },
+            {"role": "user", "content": prompt},
+            {"role": "user", "content": c_text},
+        ],
+        max_tokens=1000,
+        temperature=0.7,
+        n=1,
+        stop=None,
+    )
+
+    # Return the text directly
+    if response.choices[0].message.content is None:
+        return f"No response from {model}"
+    return response.choices[0].message.content
