@@ -2,7 +2,7 @@ import argparse
 import logging
 import fsspec
 
-from abstract_ranker.llm_utils import get_llm_models
+from abstract_ranker.llm_utils import get_llm_models, summarize_llm
 
 
 def cmd_summarize(args):
@@ -16,7 +16,9 @@ def cmd_summarize(args):
 
     # Type of summary
     summary_type_prompt = """
-The below text are meeting minutes. Please extract from the meeting minutes any action items, decisions made, or what look like big successes. The output should be Markdown that looks like this:
+The below text are meeting minutes. Please extract from the meeting minutes any action items,
+decisions made, or what look like big successes. The output should be Markdown that looks like
+this:
 
 # <Meeting Title>
 
@@ -34,7 +36,12 @@ The below text are meeting minutes. Please extract from the meeting minutes any 
 
 """
 
-    summarize_llm(summary_type_prompt, {"text": text}, args.model)
+    r = summarize_llm(
+        summary_type_prompt, {"text": text}, args.model, not args.ignore_cache
+    )
+
+    # Dump output to stdout
+    print(r)
 
 
 def main():
@@ -50,6 +57,12 @@ def main():
         action="count",
         default=0,
         help="Increase output verbosity",
+    )
+    parser.add_argument(
+        "--ignore-cache",
+        action="store_true",
+        help="Ignore the cache and re-run the queries",
+        default=False,
     )
 
     subparsers = parser.add_subparsers(dest="command", help="sub-command help")
