@@ -127,7 +127,7 @@ def query_hugging_face(
 
     try:
         return AbstractLLMResponse.model_validate_json(result)
-    except Exception:
-        logging.error(f"Bad JSON format for '{context['title']}': {result}")
+    except Exception as e:
+        logging.error(f"Bad JSON format for '{context['title']}': {result} - {str(e)}")
 
     return AbstractLLMResponse.model_validate_json(result + '" }')
