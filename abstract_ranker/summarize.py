@@ -17,20 +17,40 @@ def cmd_summarize(args):
     # Type of summary
     summary_type_prompt = """
 The below text are meeting minutes. Please extract from the meeting minutes any action items,
-decisions made, or what look like big successes. The output should be Markdown that looks like
+decisions made, or what look like big successes by project. Decisions should be clear in the notes
+and referred to as something that will be done going forward (some projects will have no
+decisions). Any project may have no Action items, decisions, or successes or only some.
+The output should be Markdown that
+looks like
 this:
 
 # <Meeting Title>
 
-## Action Items
+## <Project 1 name>
+
+### Action Items
 - Item 1
 - Item 2
 
-## Decisions Made
+### Decisions Made
 - Decision 1
 - Decision 2
 
-## Big Successes
+### Big Successes
+- Success 1
+- Success 2
+
+## <Project 2 name>
+
+### Action Items
+- Item 1
+- Item 2
+
+### Decisions Made
+- Decision 1
+- Decision 2
+
+### Big Successes
 - Success 1
 - Success 2
 
