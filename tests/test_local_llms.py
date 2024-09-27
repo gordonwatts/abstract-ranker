@@ -41,7 +41,8 @@ def pipeline_callback():
                     return [
                         {
                             "generated_text": '{"summary": "forking fork", "experiment": "", '
-                            '"keywords": [], "interest": "high", "explanation": "because"}'
+                            '"keywords": [], "interest": "high", "explanation": "because", '
+                            '"confidence": 0.0, "unknown_terms": []}'
                         }
                     ]
 
