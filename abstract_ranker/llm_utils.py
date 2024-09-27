@@ -4,9 +4,9 @@ from joblib import Memory
 
 from abstract_ranker.config import CACHE_DIR
 from abstract_ranker.data_model import AbstractLLMResponse
-from abstract_ranker.openai_utils import summarize_gpt
 
 memory_llm_query = Memory(CACHE_DIR / "llm_queries", verbose=0)
+memory_llm_summarize = Memory(CACHE_DIR / "llm_summaries", verbose=0)
 
 
 def local_query_gpt(
@@ -23,6 +23,12 @@ def local_query_hugging_face(
     from abstract_ranker.local_llms import query_hugging_face
 
     return query_hugging_face(query, context, model_name)
+
+
+def local_summarize_gpt(query: str, context: Dict[str, str], model: str) -> str:
+    from abstract_ranker.openai_utils import summarize_gpt
+
+    return summarize_gpt(query, context, model)
 
 
 _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] = {
@@ -48,8 +54,10 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
 }
 
 _llm_summary_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], str]] = {
-    "GPT4Turbo": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4-turbo"),
-    "GPT4o": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4o"),
+    "GPT4Turbo": lambda prompt, context: local_summarize_gpt(
+        prompt, context, "gpt-4-turbo"
+    ),
+    "GPT4o": lambda prompt, context: local_summarize_gpt(prompt, context, "gpt-4o"),
 }
 
 
@@ -103,7 +111,8 @@ def query_llm(
         return _query_llm(prompt, context, model)
 
 
-def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> str:
+# @memory_llm_summarize.cache
+def _summarize_llm(prompt: str, context: Dict[str, str], model: str) -> str:
     """Summarize the given context with the given model.
 
     Args:
@@ -112,4 +121,23 @@ def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> str:
         model (str): The model to use.
     """
     response = _llm_summary_dispatch[model](prompt, context)
+    return response
+
+
+def summarize_llm(
+    prompt: str, context: Dict[str, str], model: str, use_cache: bool
+) -> str:
+    """Summarize the given context with the given model.
+
+    Args:
+        prompt (str): The prompt to use.
+        context (Dict[str, str]): The context to use.
+        model (str): The model to use.
+        use_cache(bool): Whether to use the cache or not.
+    """
+    if not use_cache:
+        response = _summarize_llm.__wrapped__[model](prompt, context)
+    else:
+        response = _summarize_llm(prompt, context, model)
+
     return response
