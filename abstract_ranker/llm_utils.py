@@ -20,7 +20,8 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
 }
 
 _llm_summary_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], str]] = {
-    "GPT4o": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4-turbo"),
+    "GPT4Turbo": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4-turbo"),
+    "GPT4o": lambda prompt, context: summarize_gpt(prompt, context, "gpt-4o"),
 }
 
 
@@ -50,7 +51,7 @@ def query_llm(
     return _llm_dispatch[model](prompt, context)
 
 
-def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> None:
+def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> str:
     """Summarize the given context with the given model.
 
     Args:
@@ -58,4 +59,5 @@ def summarize_llm(prompt: str, context: Dict[str, str], model: str) -> None:
         context (Dict[str, str]): The context to use.
         model (str): The model to use.
     """
-    response = query_llm(prompt, context, model)
+    response = _llm_summary_dispatch[model](prompt, context)
+    return response
