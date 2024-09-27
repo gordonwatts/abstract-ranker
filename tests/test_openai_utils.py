@@ -180,3 +180,33 @@ in hidden sector physics or long-lived particles.",
                 == "The topic of $b \\to s \\ell \\ell$ fits does not align with my interests "
                 "in hidden sector physics or long-lived particles."
             )
+
+
+def test_openai_summarize():
+    # Make sure simple summarize call works
+    with patch("openai.OpenAI") as mock_openai:
+        with patch("abstract_ranker.openai_utils.get_key") as mock_get_key:
+            mock_get_key.return_value = "bogus_key"
+
+            mock_openai.return_value.chat.completions.create.return_value = response(
+                choices=[choice(message=message(content="This is the summary"))]
+            )
+
+            from abstract_ranker.openai_utils import summarize_gpt
+
+            r = summarize_gpt(
+                "hi",
+                {
+                    "text": "This is the text",
+                },
+                "gpt-4-turbo-bogus",
+            )
+            assert isinstance(r, str)
+            assert r == "This is the summary"
+
+            mock_openai.assert_called_once()
+            mock_openai.return_value.chat.completions.create.assert_called_once()
+            assert (
+                mock_openai.return_value.chat.completions.create.call_args[1]["model"]
+                == "gpt-4-turbo-bogus"
+            )

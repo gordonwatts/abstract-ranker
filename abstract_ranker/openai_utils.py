@@ -110,7 +110,7 @@ def query_gpt(
     return parsed_response
 
 
-def summarize_gpt(prompt: str, context: Dict[str, str], model: str) -> str:
+def summarize_gpt(prompt: str, context: Dict[str, str | List[str]], model: str) -> str:
     """Summarize the given context with the given model.
 
     Args:
