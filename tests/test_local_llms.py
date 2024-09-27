@@ -3,12 +3,18 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from abstract_ranker.config import (
-    abstract_ranking_prompt,
-    interested_topics,
-    not_interested_topics,
-)
-from abstract_ranker.local_llms import query_hugging_face
+pytestmark = pytest.mark.requires_pytorch
+
+try:
+    from abstract_ranker.config import (
+        abstract_ranking_prompt,
+        interested_topics,
+        not_interested_topics,
+    )
+    from abstract_ranker.local_llms import query_hugging_face
+except ImportError:
+    # These fail if the `pytestmark` is not true.
+    pass
 
 
 @pytest.fixture

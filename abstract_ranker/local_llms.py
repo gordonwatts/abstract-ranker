@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from lmformatenforcer import JsonSchemaParser
 from lmformatenforcer.integrations.transformers import (
@@ -37,10 +37,10 @@ def create_pipeline(model_name: str):
             torch_dtype="auto",
             trust_remote_code=True,
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
         _hf_models[model_name] = pipeline(
-            "text-generation", model=model, tokenizer=tokenizer
+            "text-generation", model=model, tokenizer=tokenizer, trust_remote_code=True
         )
 
     return _hf_models[model_name]
@@ -48,7 +48,7 @@ def create_pipeline(model_name: str):
 
 @retry(stop=stop_after_attempt(3), retry=retry_if_exception_type(ValidationError))
 def query_hugging_face(
-    query: str, context: Dict[str, str | List[str]], model_name: str
+    query: str, context: Dict[str, Union[str, List[str]]], model_name: str
 ) -> AbstractLLMResponse:
     """Use the `transformers` library to run a query from huggingface.co.
 

@@ -11,6 +11,8 @@ def test_dispatch():
             keywords=["hi"],
             interest="high",
             explanation="hi",
+            confidence=0.5,
+            unknown_terms=["hi"],
         )
 
         context = {"title": "hi"}
@@ -31,7 +33,7 @@ def test_cache(cache_dir):
     "Make sure that caching is used if called twice"
 
     # with patch("abstract_ranker.openai_utils.query_gpt") as mock_query_gpt:
-    with patch("abstract_ranker.llm_utils.query_gpt") as mock_query_gpt:
+    with patch("abstract_ranker.llm_utils.local_query_gpt") as mock_query_gpt:
         from abstract_ranker.llm_utils import AbstractLLMResponse
 
         mock_query_gpt.return_value = AbstractLLMResponse(
@@ -40,6 +42,8 @@ def test_cache(cache_dir):
             keywords=["hi"],
             interest="high",
             explanation="hi",
+            confidence=0.5,
+            unknown_terms=["hi"],
         )
 
         context = {"title": "hi-unique-test"}

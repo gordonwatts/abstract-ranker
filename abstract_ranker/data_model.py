@@ -1,5 +1,30 @@
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
+from datetime import datetime
+
+
+class Contribution(BaseModel):
+    "A contribution we are going to evaluate"
+    # Title of the talk
+    title: str
+
+    # Abstract of the talk
+    abstract: str
+
+    # Poster, plenary, etc.
+    type: Optional[str]
+
+    # Time of the abstract/talk/paper
+    startDate: Optional[datetime]
+
+    # End date of the talk (or same as startDate)
+    endDate: Optional[datetime]
+
+    # The room metadata
+    roomFullname: Optional[str]
+
+    # URL to the item (talk, contribution, etc.)
+    url: Optional[str]
 
 
 class AbstractLLMResponse(BaseModel):
@@ -9,7 +34,7 @@ class AbstractLLMResponse(BaseModel):
     summary: str = Field(
         ...,
         title="A short summary of the abstract that does not repeat the title, no more than 200 "
-        "characters.",
+        "characters. If there is no abstract provided, just repeat the title.",
     )
 
     # The most likely experiment this is associated with
@@ -21,12 +46,14 @@ class AbstractLLMResponse(BaseModel):
 
     # List of keywords
     keywords: List[str] = Field(
-        ..., title="Short list of keywords associated with the abstract"
+        ..., title="Short JSON list of string-keywords associated with the abstract"
     )
 
     # What is the interest level here?
     interest: str = Field(
-        ..., title="'high', 'medium', or 'low': how interesting I'll find the abstract."
+        ...,
+        title="The string 'high', 'medium', or 'low' indicating how interesting I'll find "
+        "the abstract.",
     )
 
     # A short explanation of why the interest level is what it is
@@ -36,13 +63,16 @@ class AbstractLLMResponse(BaseModel):
         "single sentence, 100 words maximum.",
     )
 
+    # How confident is the AI of its interest assignment?
+    confidence: float = Field(
+        ...,
+        title="A float from 0 to 1 representing the confidence in the interest level.",
+    )
 
-# Please format your with a summary  (One line, terse, summary of the abstract that
-# does not repeat the title. It should add extra information beyond the title, and should mention
-# any key outcomes that are present in the abstract), an experiment name (If you can guess the
-# experiment this abstract is associated with (e.g. ATLAS, CMS, LHCb, etc), place it here.
-# Otherwise
-# leave it blank), a list of keywords (json-list of 4 or less keywords or phrases describing topics
-# in the below abstract and title, comma separated, pulled from my list of interests), and my
-# expected interest(put: "high" (hits several of the interests listed above), "medium" (hits one
-# interest), or "low" (hits a not interest). Be harsh, my time is valuable).
+    # Any terms in the abstract that the LLM does not know, but would probably make
+    # the confidence level higher.
+    unknown_terms: List[str] = Field(
+        ...,
+        title="Short JSON list of terms (strings) in the abstract whose definition would "
+        "improve your confidence.",
+    )

@@ -1,9 +1,16 @@
 {
   "cSpell.words": [
+    "ACAT",
+    "addinivalue",
+    "adic",
+    "arxiv",
     "autouse",
+    "Axion",
     "Calo",
+    "CUDA",
     "dtype",
     "filelock",
+    "Fischler",
     "generalisation",
     "generalise",
     "generalised",
@@ -16,11 +23,17 @@
     "lmformatenforcer",
     "localzone",
     "MATHUSLA",
+    "modifyitems",
+    "nvcc",
     "openai",
     "pydantic",
+    "pytestmark",
     "pytz",
+    "Srednicki",
     "SUSY",
     "tzlocal",
-    "Unet"
+    "Unet",
+    "venv",
+    "Zhitnitsky"
   ]
 }
