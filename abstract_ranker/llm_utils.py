@@ -25,7 +25,9 @@ def local_query_hugging_face(
     return query_hugging_face(query, context, model_name)
 
 
-def local_summarize_gpt(query: str, context: Dict[str, str], model: str) -> str:
+def local_summarize_gpt(
+    query: str, context: Dict[str, str | List[str]], model: str
+) -> str:
     from abstract_ranker.openai_utils import summarize_gpt
 
     return summarize_gpt(query, context, model)
@@ -58,6 +60,9 @@ _llm_summary_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], str]] = {
         prompt, context, "gpt-4-turbo"
     ),
     "GPT4o": lambda prompt, context: local_summarize_gpt(prompt, context, "gpt-4o"),
+    "GPT4o-mini": lambda prompt, context: local_summarize_gpt(
+        prompt, context, "gpt-4o-mini"
+    ),
 }
 
 
@@ -111,7 +116,7 @@ def query_llm(
         return _query_llm(prompt, context, model)
 
 
-# @memory_llm_summarize.cache
+@memory_llm_summarize.cache
 def _summarize_llm(prompt: str, context: Dict[str, str], model: str) -> str:
     """Summarize the given context with the given model.
 
