@@ -161,4 +161,4 @@ cython_debug/
 #.idea/
 .openai_key
 .abstract_cache/*
-*.csv
+/*.csv
