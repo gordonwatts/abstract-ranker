@@ -34,6 +34,8 @@ def dump_to_csv_file(
             ]
         )
 
+        # Iterate over the contributions and summaries
+        unknown_terms = set()
         for contrib, summary in data:
             # Write the row to the CSV file
             writer.writerow(
@@ -60,5 +62,7 @@ def dump_to_csv_file(
                     summary.unknown_terms,
                 ]
             )
+            unknown_terms.update(summary.unknown_terms)
     # Print a message indicating the CSV file has been created
     logging.info(f"CSV file '{output_filename}' has been created.")
+    logging.info(f"Unknown terms: {unknown_terms}")
