@@ -47,9 +47,29 @@ class IndicoDate(BaseModel):
         local_talk_time = talk_time.astimezone(get_localzone())
         return local_talk_time
 
-        # local_date = local_talk_time.strftime("%Y-%m-%d")
-        # local_time = local_talk_time.strftime("%I:%M:%S %p")
-        # return local_date, local_time
+    def get_datetime(self, tz_name: Optional[str]) -> datetime:
+        """Returns the date and time in the specified timezone, taking into account
+        `self.tz` and `self.date` and `self.time`. If `tz_name` is None,
+        it will the time in the event's timezone.
+
+        Returns:
+            Tuple[str, str]: The date and time in the local timezone.
+        """
+        # Get the talk timezone offset and the proper time for the talk.
+        talk_timezone = pytz.timezone(self.tz)
+        now = datetime.now(talk_timezone)
+        timezone_offset = now.strftime("%z")
+
+        talk_time = datetime.strptime(
+            f"{self.date} {self.time} {timezone_offset}", "%Y-%m-%d %H:%M:%S %z"
+        )
+
+        if tz_name is None:
+            return talk_time
+
+        # Now, create that in local time.
+        local_talk_time = talk_time.astimezone(pytz.timezone(tz_name))
+        return local_talk_time
 
 
 @memory_indico.cache
@@ -130,7 +150,7 @@ class IndicoContribution(BaseModel):
 
 
 def indico_contributions(
-    event_data: Dict[str, Any]
+    event_data: Dict[str, Any], timezone_name: str
 ) -> Generator[Contribution, None, None]:
     """Yields the contributions from the event data.
 
@@ -143,10 +163,14 @@ def indico_contributions(
     for contrib in event_data["contributions"]:
         item = IndicoContribution(**contrib)
         start_date = (
-            item.startDate.get_local_datetime() if item.startDate is not None else None
+            item.startDate.get_datetime(timezone_name)
+            if item.startDate is not None
+            else None
         )
         end_date = (
-            item.endDate.get_local_datetime() if item.endDate is not None else None
+            item.endDate.get_datetime(timezone_name)
+            if item.endDate is not None
+            else None
         )
 
         contribution = Contribution(
