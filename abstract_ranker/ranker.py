@@ -1,14 +1,48 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import Generator
+from typing import Generator, Optional
 from datetime import datetime, timedelta
+
+import pytz
+import tzlocal
 
 from abstract_ranker.config import (
     abstract_ranking_prompt,
 )
 from abstract_ranker.data_model import Contribution
 from abstract_ranker.llm_utils import get_llm_models
+
+
+def _parse_timezone(cmd_tz_name: str) -> Optional[str]:
+    """Parses the provided timezone name and returns the corresponding timezone.
+        cmd_tz_name (str): The name of the timezone to parse. It can be "event", "local", or a
+                           valid timezone name.
+        ValueError: If the provided timezone name is not valid.
+        Optional[str]: The official name of the timezone, or None if the timezone is "event".
+
+    Args:
+        cmd_tz_name (str): The name the user typed in
+
+    Raises:
+        ValueError: Throw if not a good timezone
+
+    Returns:
+        str: None (for the event) or the name of the timezone to use.
+    """
+    # Extract the timezone.
+    final_timezone: Optional[str] = cmd_tz_name
+
+    if final_timezone == "event":
+        final_timezone = None
+    elif final_timezone == "local":
+        # Get the official name of the local timezone
+        final_timezone = tzlocal.get_localzone().key
+    else:
+        # Check that the `final_timezone` represents a valid timezone name.
+        if final_timezone not in pytz.all_timezones:
+            raise ValueError(f"Invalid timezone name: {final_timezone}")
+    return final_timezone
 
 
 def _generate_ranking_results(
@@ -52,7 +86,7 @@ def cmd_rank_indico(args):
     # Build the pipe-line.
     indico_data = load_indico_json(args.indico_url)
     number_contributions = len(indico_data["contributions"])
-    contributions = indico_contributions(indico_data)
+    contributions = indico_contributions(indico_data, args.tz)
 
     csv_file = generate_ranking_csv_filename(indico_data)
 
@@ -106,6 +140,12 @@ def main():
         action="store_true",
         help="Ignore the cache and re-run the queries",
         default=False,
+    )
+    parser.add_argument(
+        "--tz",
+        type=_parse_timezone,
+        help="Timezone for any times. Options are 'local', 'event', or any timezone name.",
+        default="local",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="sub-command help")

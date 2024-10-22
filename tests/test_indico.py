@@ -58,7 +58,7 @@ def test_good_contributions_conversion(cache_dir):
 
         data = load_indico_json("https://indico.cern.ch/event/1330797")
 
-        contributions = list(indico_contributions(data))
+        contributions = list(indico_contributions(data, None))
 
         assert len(contributions) == 179
         assert any("Introduction of dynamic job" in c.title for c in contributions)
