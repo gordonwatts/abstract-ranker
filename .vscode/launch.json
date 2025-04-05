@@ -1,0 +1,15 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug conference_chat",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/abstract_ranker/conference_chat.py",
+            "args": [
+                "https://indico.cern.ch/event/1"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}

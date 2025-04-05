@@ -13,7 +13,8 @@ dependencies = [
   'lm-format-enforcer',
   'tenacity',
   'openai',
-  'arxiv'
+  'arxiv',
+  'typer',
 ]
 # You will need pytorch too for running against phi3
 # pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
@@ -51,6 +52,7 @@ ml = ['einops', 'flash-attn', 'tiktoken==0.6.0', 'transformers[torch]']
 [project.scripts]
 abstract_ranker = "abstract_ranker.ranker:main"
 llm_summarize = "abstract_ranker.summarize:main"
+conference_chat = "abstract_ranker.conference_chat:main_app"
 
 [tool.hatch.envs.dev.scripts]
 check = "mypy --install-types --non-interactive {args:abstract_ranker tests}"
