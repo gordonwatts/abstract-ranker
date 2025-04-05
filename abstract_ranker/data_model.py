@@ -5,6 +5,7 @@ from datetime import datetime
 
 class Contribution(BaseModel):
     "A contribution we are going to evaluate"
+
     # Title of the talk
     title: str
 
@@ -25,6 +26,9 @@ class Contribution(BaseModel):
 
     # URL to the item (talk, contribution, etc.)
     url: Optional[str]
+
+    # URL of attachments
+    attachments: List[str] = []
 
 
 class AbstractLLMResponse(BaseModel):

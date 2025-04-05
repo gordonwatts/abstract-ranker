@@ -65,3 +65,6 @@ def test_good_contributions_conversion(cache_dir):
 
         assert contributions[0].url is not None
         assert contributions[0].url.startswith("https://indico.cern.ch/event")
+
+        job = [c for c in contributions if "Introduction of dynamic job" in c.title][0]
+        assert len(job.attachments) > 0

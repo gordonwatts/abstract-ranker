@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 import re
-from typing import Any, Dict, Generator, Optional, Tuple
+from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import pytz
 from joblib import Memory
@@ -18,6 +18,7 @@ memory_indico = Memory(CACHE_DIR / "indico", verbose=0)
 # Some classes to help us out.
 class IndicoDate(BaseModel):
     "A date in the indico system"
+
     # The date
     date: str
 
@@ -125,8 +126,38 @@ def load_indico_json(event_url: str) -> Dict[str, Any]:
     return _load_indico_json(node, meeting_id)  # type: ignore
 
 
+class IndicoAttachment(BaseModel):
+    "A file attached to an indico contribution"
+
+    # Where we can download the item from
+    download_url: str
+
+    # Display title of the item
+    title: str
+
+    # What type is the download (file, link, etc.)
+    type: str
+
+    # Filename
+    filename: str = ""
+
+    # content mimetype
+    content_type: str = ""
+
+
+class IndicoFolder(BaseModel):
+    "A folder of data"
+
+    # Folder ID
+    id: int
+
+    # Files in this folder
+    attachments: List[IndicoAttachment] = []
+
+
 class IndicoContribution(BaseModel):
     "And indico contribution"
+
     # Title of the talk
     title: str
 
@@ -147,6 +178,9 @@ class IndicoContribution(BaseModel):
 
     # The URL to the contribution
     url: Optional[str]
+
+    # The contributions
+    folders: List[IndicoFolder] = []
 
 
 def indico_contributions(
@@ -181,6 +215,7 @@ def indico_contributions(
             endDate=end_date,
             roomFullname=item.roomFullname,
             url=item.url,
+            attachments=[a.download_url for f in item.folders for a in f.attachments],
         )
         yield contribution
 
