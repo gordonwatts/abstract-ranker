@@ -15,14 +15,27 @@ def setup_logging(verbose: int):
 
 @app.command()
 def main(
-    url: str = typer.Argument(..., help="URL to an Indico conference endpoint"),
+    indico_url: str = typer.Argument(..., help="URL to an Indico conference endpoint"),
     verbose: int = typer.Option(0, "-v", "--verbose", count=True, min=0, max=2),
 ):
     """Process a URL to an Indico conference endpoint."""
     verbose = int(verbose)  # Ensure verbose is an integer
     setup_logging(verbose)
-    logging.info(f"Processing URL: {url}")
-    # Add logic to process the URL here
+    logging.debug(f"Processing URL: {indico_url}")
+
+    # Load what we need - late loading so command processing is fast
+    from abstract_ranker.indico import (
+        indico_contributions,
+        load_indico_json,
+    )
+
+    # Next, download the contributions
+    indico_data = load_indico_json(indico_url)
+    number_contributions = len(indico_data["contributions"])
+    logging.info(
+        f"Number of contributions from '{indico_data['title']}': {number_contributions}"
+    )
+    # contributions = indico_contributions(indico_data, "")
 
 
 if __name__ == "__main__":
