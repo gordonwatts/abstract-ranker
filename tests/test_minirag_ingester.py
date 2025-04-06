@@ -20,6 +20,7 @@ async def test_download_attachment(tmp_path: Path):
     with patch("aiohttp.ClientSession.get", new_callable=AsyncMock) as mock_get:
         mock_response = AsyncMock()
         mock_response.read.return_value = b"PDF content"
+        mock_response.raise_for_status = lambda: None
         mock_get.return_value = mock_response
 
         file_path = await download_attachment(attachment_url, download_dir)
@@ -35,6 +36,7 @@ async def test_download_attachment_with_escape_sequences(tmp_path: Path):
     with patch("aiohttp.ClientSession.get", new_callable=AsyncMock) as mock_get:
         mock_response = AsyncMock()
         mock_response.read.return_value = b"PDF content"
+        mock_response.raise_for_status = lambda: None
         mock_get.return_value = mock_response
 
         file_path = await download_attachment(attachment_url, download_dir)
@@ -84,9 +86,21 @@ async def test_insert_into_minirag(tmp_path: Path):
     with patch("aiohttp.ClientSession.post", new_callable=AsyncMock) as mock_post:
         mock_response = AsyncMock()
         mock_response.json.return_value = {"success": True}
+        mock_response.raise_for_status = lambda: None
         mock_post.return_value = mock_response
 
-        result = await insert_into_minirag(markdown_file, api_url)
+        result = await insert_into_minirag("title", "abstract", markdown_file, api_url)
+
+        # Check that the abstract and title text are passed to the call
+        mock_post.assert_any_call(
+            f"{api_url}/documents/text",
+            headers={"Content-Type": "application/json"},
+            json={
+                "text": "# title\n\n## Abstract\nabstract",
+                "description": "Title and abstract for test.md",
+            },
+        )
+
         assert result["success"] is True
 
 
@@ -97,7 +111,32 @@ async def test_insert_into_minirag_file_not_found():
     with pytest.raises(
         FileNotFoundError, match="The file non_existent.md does not exist."
     ):
-        await insert_into_minirag(markdown_file, api_url)
+        await insert_into_minirag("title", "abstract", markdown_file, api_url)
+
+
+@pytest.mark.asyncio
+async def test_insert_into_minirag_prevents_duplicate_insertion(tmp_path: Path):
+    markdown_file = tmp_path / "test.md"
+    markdown_file.write_text("# Sample Markdown Content")
+    api_url = "http://example.com/api"
+
+    with patch("aiohttp.ClientSession.post", new_callable=AsyncMock) as mock_post:
+        mock_response = AsyncMock()
+        mock_response.json.return_value = {"success": True}
+        mock_response.raise_for_status = lambda: None
+        mock_post.return_value = mock_response
+
+        # First call to insert_into_minirag
+        result1 = await insert_into_minirag("title", "abstract", markdown_file, api_url)
+        assert result1["success"] is True
+        initial_call_count = mock_post.call_count
+
+        # Second call to insert_into_minirag with the same file
+        result2 = await insert_into_minirag("title", "abstract", markdown_file, api_url)
+        assert result2["success"] is True
+        assert (
+            mock_post.call_count == initial_call_count
+        )  # Ensure no additional POST request was made
 
 
 @pytest.mark.asyncio
@@ -130,10 +169,21 @@ async def test_process_attachments(tmp_path: Path):
         ) as mock_insert,
     ):
         mock_download.side_effect = lambda url, dir: dir / Path(url).name
-        mock_docling.side_effect = lambda file: file.with_suffix(file.suffix + ".md")
-        mock_insert.side_effect = lambda file, api: {"success": True}
+        mock_docling.side_effect = lambda file: file.with_suffix(".md")
+        mock_insert.side_effect = lambda title, abstract, file, api: {"success": True}
+
         results = await process_attachments(contributions, download_dir, api_url)
-        assert all("success" in result["results"][0] for result in results)  # type: ignore
+
+        # Validate the structure and content of the results
+        assert len(results) == 2
+        assert results[0]["title"] == "Test Contribution 1"
+        assert results[1]["title"] == "Test Contribution 2"
+        assert all("results" in result for result in results)
+        assert all(
+            result["success"] is True
+            for res in results
+            for result in res["results"]  # type: ignore
+        )
 
 
 @pytest.mark.asyncio

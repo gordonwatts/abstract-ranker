@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import tempfile
 import urllib.parse
+import json
 from pathlib import Path
 from typing import Dict, List, Union
 
@@ -90,18 +91,63 @@ async def run_docling(file_path: Path) -> Path:
 
 
 async def insert_into_minirag(
-    markdown_file: Path, api_url: str
+    title: str, abstract: str, markdown_file: Path, api_url: str
 ) -> Dict[str, Union[str, bool]]:
     """Insert the markdown file into the min-rag database via HTTP POST asynchronously."""
     if not markdown_file.exists():
         raise FileNotFoundError(f"The file {markdown_file} does not exist.")
+
+    # Define the cache file path near the markdown file directory
+    cache_file = markdown_file.parent / "minirag_cache.json"
+
+    # Load the cache if it exists
+    if cache_file.exists():
+        with cache_file.open("r") as f:
+            cache = json.load(f)
+    else:
+        cache = {}
+
+    # Check if the file has already been processed
+    markdown_file_name = markdown_file.name
+    if markdown_file_name in cache:
+        logging.info(f"Skipping insertion for {markdown_file_name}, already processed.")
+        return cache[markdown_file_name]
+
+    # Insert the title and abstract
     async with aiohttp.ClientSession() as session:
+        title_abstract_text = f"# {title}\n\n## Abstract\n{abstract}"
+        response = await session.post(
+            f"{api_url}/documents/text",
+            headers={"Content-Type": "application/json"},
+            json={
+                "text": title_abstract_text,
+                "description": f"Title and abstract for {markdown_file_name}",
+            },
+        )
+        result = await response.json()
+        logging.debug(f"Response from inserting title and abstract: {result}")
+        response.raise_for_status()
+
+        # Next, insert the markdown file itself
         async with aiofiles.open(markdown_file, "r") as file:
             content = await file.read()
-            response = await session.post(api_url, data={"file": content})
+            form_data = aiohttp.FormData()
+            form_data.add_field("file", content, filename=markdown_file_name)
+            form_data.add_field(
+                "description", f"Markdown content for {markdown_file_name}"
+            )
+
+            response = await session.post(f"{api_url}/documents/file", data=form_data)
+            result = await response.json()
+            logging.debug(f"Response from inserting markdown file: {result}")
             response.raise_for_status()
-            return await response.json()
-    return {"success": True}
+
+    # Update the cache
+    cache[markdown_file_name] = result
+    with cache_file.open("w") as f:
+        json.dump(cache, f)
+
+    return result
 
 
 async def process_attachments(
@@ -127,7 +173,12 @@ async def process_attachments(
                     markdown_file = await run_docling(file_path)
 
                 async with ingest_semaphore:
-                    result = await insert_into_minirag(markdown_file, api_url)
+                    result = await insert_into_minirag(
+                        contribution.title,
+                        contribution.abstract,
+                        markdown_file,
+                        api_url,
+                    )
 
                 results.append(result)
 
