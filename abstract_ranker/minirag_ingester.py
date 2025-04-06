@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import re
 import shutil
 import subprocess
@@ -70,7 +69,8 @@ async def run_docling(file_path: Path) -> Path:
         assert process.returncode is not None
         if process.returncode != 0:
             logging.error(
-                f"Docling failed with return code {process.returncode}.\nSTDOUT: {stdout.decode()}\nSTDERR: {stderr.decode()}"
+                f"Docling failed with return code {process.returncode}.\nSTDOUT: {stdout.decode()}"
+                f"\nSTDERR: {stderr.decode()}"
             )
             raise subprocess.CalledProcessError(process.returncode, "powershell")
         if not output_file.exists():
