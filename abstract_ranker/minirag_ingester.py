@@ -39,7 +39,11 @@ async def download_attachment(attachment_url: str, download_dir: Path) -> Path:
 
 async def run_docling(file_path: Path) -> Path:
     """Run the docling command on a file to generate a markdown file asynchronously."""
+    # Can we skip?
     output_file = file_path.with_suffix(".md")
+    if output_file.exists():
+        logging.debug(f"{output_file} already exists, skipping docling execution.")
+        return output_file
     logging.debug(f"Preparing to run docling on {file_path}")
 
     # Create a temporary PowerShell script
