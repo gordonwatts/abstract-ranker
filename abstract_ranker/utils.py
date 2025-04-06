@@ -10,31 +10,29 @@ from rich.progress import Progress
 class ContributionData:
     title: str
     abstract: str
-    url: str
+    urls: list[str]
 
 
 def convert_contribution_to_data(contribution: Contribution) -> list[ContributionData]:
-    """Convert a Contribution to one or more ContributionData instances based on attachments."""
+    """Convert a Contribution to a ContributionData instance with a list of URLs."""
     attachment_groups = defaultdict(list)
 
     for attachment in contribution.attachments:
         base_name = attachment.rsplit(".", 1)[0]
         attachment_groups[base_name].append(attachment)
 
-    result = []
+    urls = []
     for base_name, attachments in attachment_groups.items():
         preferred_attachment = sorted(
             attachments, key=lambda x: (x.endswith(".pdf"), x), reverse=True
         )[0]
-        result.append(
-            ContributionData(
-                title=contribution.title,
-                abstract=contribution.abstract,
-                url=preferred_attachment,
-            )
-        )
+        urls.append(preferred_attachment)
 
-    return result
+    return [
+        ContributionData(
+            title=contribution.title, abstract=contribution.abstract, urls=urls
+        )
+    ]
 
 
 def as_a_number(interest: str) -> int:
