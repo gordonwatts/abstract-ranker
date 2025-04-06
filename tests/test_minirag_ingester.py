@@ -63,15 +63,16 @@ async def test_download_attachment_skips_existing_file(tmp_path: Path):
 
 
 @pytest.mark.asyncio
-async def test_run_docling():
-    file_path = Path("test.pdf")
+async def test_run_docling(tmp_path: Path):
+    file_path = tmp_path / "test.pdf"
+    file_path.touch()  # Create the dummy PDF file in the temp path
+
     with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
         mock_exec.return_value.communicate.return_value = (b"", b"")
         mock_exec.return_value.returncode = 0
 
         # Ensure the dummy .md file is created in the correct location
         dummy_md_file = file_path.with_suffix(".md")
-        dummy_md_file.parent.mkdir(parents=True, exist_ok=True)
         dummy_md_file.touch()
 
         output_file = await run_docling(file_path)
