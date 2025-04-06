@@ -14,8 +14,7 @@ def test_convert_contribution_to_data_single_attachment():
         attachments=["attachment1.pdf"],
     )
     result = convert_contribution_to_data(contribution)
-    assert len(result) == 1
-    assert result[0] == ContributionData(
+    assert result == ContributionData(
         title="Sample Title", abstract="Sample Abstract", urls=["attachment1.pdf"]
     )
 
@@ -32,8 +31,7 @@ def test_convert_contribution_to_data_multiple_attachments_same_name():
         attachments=["attachment1.txt", "attachment1.pdf"],
     )
     result = convert_contribution_to_data(contribution)
-    assert len(result) == 1
-    assert result[0] == ContributionData(
+    assert result == ContributionData(
         title="Sample Title", abstract="Sample Abstract", urls=["attachment1.pdf"]
     )
 
@@ -50,8 +48,7 @@ def test_convert_contribution_to_data_multiple_different_attachments():
         attachments=["attachment1.pdf", "attachment2.pdf"],
     )
     result = convert_contribution_to_data(contribution)
-    assert len(result) == 1
-    assert result[0] == ContributionData(
+    assert result == ContributionData(
         title="Sample Title",
         abstract="Sample Abstract",
         urls=["attachment1.pdf", "attachment2.pdf"],
@@ -70,7 +67,6 @@ def test_convert_contribution_to_data_no_attachments():
         attachments=[],
     )
     result = convert_contribution_to_data(contribution)
-    assert len(result) == 1
-    assert result[0] == ContributionData(
+    assert result == ContributionData(
         title="Sample Title", abstract="Sample Abstract", urls=[]
     )

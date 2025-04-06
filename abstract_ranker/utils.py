@@ -13,7 +13,7 @@ class ContributionData:
     urls: list[str]
 
 
-def convert_contribution_to_data(contribution: Contribution) -> list[ContributionData]:
+def convert_contribution_to_data(contribution: Contribution) -> ContributionData:
     """Convert a Contribution to a ContributionData instance with a list of URLs."""
     attachment_groups = defaultdict(list)
 
@@ -28,11 +28,9 @@ def convert_contribution_to_data(contribution: Contribution) -> list[Contributio
         )[0]
         urls.append(preferred_attachment)
 
-    return [
-        ContributionData(
-            title=contribution.title, abstract=contribution.abstract, urls=urls
-        )
-    ]
+    return ContributionData(
+        title=contribution.title, abstract=contribution.abstract, urls=urls
+    )
 
 
 def as_a_number(interest: str) -> int:
