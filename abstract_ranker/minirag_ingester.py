@@ -2,6 +2,8 @@ import asyncio
 import subprocess
 from pathlib import Path
 from typing import Dict, List, Union
+import urllib.parse
+import re
 
 import aiofiles
 import aiohttp
@@ -10,14 +12,24 @@ from abstract_ranker.utils import ContributionData
 
 async def download_attachment(attachment_url: str, download_dir: Path) -> Path:
     """Download an attachment from a URL asynchronously."""
+    # Decode URL and sanitize filename
+    decoded_url = urllib.parse.unquote(attachment_url)
+    sanitized_name = re.sub(r'[<>:"/\\|?*]', "", Path(decoded_url).name)
+    final_filename = download_dir / sanitized_name
+
+    # Skip download if file already exists
+    if final_filename.exists():
+        return final_filename
+
+    temp_filename = download_dir / f"{sanitized_name}-download"
+
     async with aiohttp.ClientSession() as session:
         response = await session.get(attachment_url)
         response.raise_for_status()
-        temp_filename = download_dir / f"{Path(attachment_url).name}-download"
-        final_filename = download_dir / Path(attachment_url).name
         async with aiofiles.open(temp_filename, "wb") as file:
             await file.write(await response.read())
         temp_filename.rename(final_filename)
+
     return final_filename
 
 

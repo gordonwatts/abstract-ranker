@@ -28,6 +28,39 @@ async def test_download_attachment(tmp_path: Path):
 
 
 @pytest.mark.asyncio
+async def test_download_attachment_with_escape_sequences(tmp_path: Path):
+    attachment_url = "http://example.com/test%20file.pdf"
+    download_dir = Path(tmp_path)
+
+    with patch("aiohttp.ClientSession.get", new_callable=AsyncMock) as mock_get:
+        mock_response = AsyncMock()
+        mock_response.read.return_value = b"PDF content"
+        mock_get.return_value = mock_response
+
+        file_path = await download_attachment(attachment_url, download_dir)
+        assert file_path.exists()
+        assert file_path.name == "test file.pdf"
+
+
+@pytest.mark.asyncio
+async def test_download_attachment_skips_existing_file(tmp_path: Path):
+    attachment_url = "http://example.com/test%20file.pdf"
+    download_dir = Path(tmp_path)
+    existing_file = download_dir / "test file.pdf"
+    existing_file.write_text("Existing content")
+
+    with patch("aiohttp.ClientSession.get", new_callable=AsyncMock) as mock_get:
+        mock_response = AsyncMock()
+        mock_response.read.return_value = b"PDF content"
+        mock_get.return_value = mock_response
+
+        file_path = await download_attachment(attachment_url, download_dir)
+        assert file_path.exists()
+        assert file_path.name == "test file.pdf"
+        assert file_path.read_text() == "Existing content"
+
+
+@pytest.mark.asyncio
 async def test_run_docling():
     file_path = Path("test.pdf")
     with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
