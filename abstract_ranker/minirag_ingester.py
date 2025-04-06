@@ -1,12 +1,17 @@
 import asyncio
+import logging
+import os
+import re
+import shutil
 import subprocess
+import tempfile
+import urllib.parse
 from pathlib import Path
 from typing import Dict, List, Union
-import urllib.parse
-import re
 
 import aiofiles
 import aiohttp
+
 from abstract_ranker.utils import ContributionData
 
 
@@ -35,19 +40,48 @@ async def download_attachment(attachment_url: str, download_dir: Path) -> Path:
 
 async def run_docling(file_path: Path) -> Path:
     """Run the docling command on a file to generate a markdown file asynchronously."""
-    output_file = file_path.with_suffix(file_path.suffix + ".md")
-    # process = await asyncio.create_subprocess_exec(
-    #     "docling",
-    #     str(file_path),
-    #     "-o",
-    #     str(output_file),
-    #     stdout=asyncio.subprocess.PIPE,
-    #     stderr=asyncio.subprocess.PIPE,
-    # )
-    # await process.communicate()
-    # assert process.returncode is not None
-    # if process.returncode != 0:
-    #     raise subprocess.CalledProcessError(process.returncode, "docling")
+    output_file = file_path.with_suffix(".md")
+    logging.debug(f"Preparing to run docling on {file_path}")
+
+    # Create a temporary PowerShell script
+    temp_ps1 = tempfile.NamedTemporaryFile(delete=False, suffix=".ps1")
+    try:
+        ps1_content = f"""
+        deactivate
+        {shutil.which("powershell")} -Command "& {{
+            C:\\Users\\gordo\\Code\\llm\\docling-experiments\\.venv\\Scripts\\activate.ps1
+            docling '{file_path}' --output '{output_file.parent}'
+        }}"
+        """
+        temp_ps1.write(ps1_content.encode())
+        temp_ps1.close()
+
+        # Run the PowerShell script
+        process = await asyncio.create_subprocess_exec(
+            "powershell",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            temp_ps1.name,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
+        )
+        stdout, stderr = await process.communicate()
+        assert process.returncode is not None
+        if process.returncode != 0:
+            logging.error(
+                f"Docling failed with return code {process.returncode}.\nSTDOUT: {stdout.decode()}\nSTDERR: {stderr.decode()}"
+            )
+            raise subprocess.CalledProcessError(process.returncode, "powershell")
+        if not output_file.exists():
+            raise RuntimeError(
+                f"The output file {output_file} was not created by the docling command."
+            )
+        logging.info(f"Successfully generated markdown file: {output_file}")
+    finally:
+        # Clean up the temporary PowerShell script
+        Path(temp_ps1.name).unlink(missing_ok=True)
+
     return output_file
 
 

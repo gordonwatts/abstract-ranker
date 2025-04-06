@@ -66,8 +66,14 @@ async def test_run_docling():
     with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_exec:
         mock_exec.return_value.communicate.return_value = (b"", b"")
         mock_exec.return_value.returncode = 0
+
+        # Ensure the dummy .md file is created in the correct location
+        dummy_md_file = file_path.with_suffix(".md")
+        dummy_md_file.parent.mkdir(parents=True, exist_ok=True)
+        dummy_md_file.touch()
+
         output_file = await run_docling(file_path)
-        assert output_file == file_path.with_suffix(file_path.suffix + ".md")
+        assert output_file == dummy_md_file
 
 
 @pytest.mark.asyncio
