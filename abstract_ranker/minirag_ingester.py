@@ -13,27 +13,29 @@ async def download_attachment(attachment_url: str, download_dir: Path) -> Path:
     async with aiohttp.ClientSession() as session:
         response = await session.get(attachment_url)
         response.raise_for_status()
-        filename = download_dir / Path(attachment_url).name
-        async with aiofiles.open(filename, "wb") as file:
+        temp_filename = download_dir / f"{Path(attachment_url).name}-download"
+        final_filename = download_dir / Path(attachment_url).name
+        async with aiofiles.open(temp_filename, "wb") as file:
             await file.write(await response.read())
-    return filename
+        temp_filename.rename(final_filename)
+    return final_filename
 
 
 async def run_docling(file_path: Path) -> Path:
     """Run the docling command on a file to generate a markdown file asynchronously."""
     output_file = file_path.with_suffix(file_path.suffix + ".md")
-    process = await asyncio.create_subprocess_exec(
-        "docling",
-        str(file_path),
-        "-o",
-        str(output_file),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    await process.communicate()
-    assert process.returncode is not None
-    if process.returncode != 0:
-        raise subprocess.CalledProcessError(process.returncode, "docling")
+    # process = await asyncio.create_subprocess_exec(
+    #     "docling",
+    #     str(file_path),
+    #     "-o",
+    #     str(output_file),
+    #     stdout=asyncio.subprocess.PIPE,
+    #     stderr=asyncio.subprocess.PIPE,
+    # )
+    # await process.communicate()
+    # assert process.returncode is not None
+    # if process.returncode != 0:
+    #     raise subprocess.CalledProcessError(process.returncode, "docling")
     return output_file
 
 
@@ -49,6 +51,7 @@ async def insert_into_minirag(
             response = await session.post(api_url, data={"file": content})
             response.raise_for_status()
             return await response.json()
+    return {"success": True}
 
 
 async def process_attachments(
