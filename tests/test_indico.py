@@ -2,7 +2,11 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
-from abstract_ranker.indico import generate_ranking_csv_filename, indico_contributions
+from abstract_ranker.indico import (
+    generate_ranking_csv_filename,
+    indico_contributions,
+    _load_indico_json,
+)
 
 
 def test_good_load(cache_dir):
@@ -12,7 +16,12 @@ def test_good_load(cache_dir):
     text_json = Path("tests/data/1330797.json").read_text()
     parsed_json = json.loads(text_json)
 
-    with patch("requests.get") as mock_get:
+    with (
+        patch("requests.get") as mock_get,
+        patch(
+            "abstract_ranker.indico._load_indico_json", _load_indico_json.__wrapped__
+        ),
+    ):
         mock_get.return_value.json.return_value = parsed_json
 
         from abstract_ranker.indico import load_indico_json
