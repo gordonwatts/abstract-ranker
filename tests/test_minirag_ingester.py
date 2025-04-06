@@ -1,12 +1,16 @@
-import pytest
-from unittest.mock import AsyncMock, patch
+import asyncio
 from pathlib import Path
+from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from abstract_ranker.minirag_ingester import (
     download_attachment,
-    run_docling,
     insert_into_minirag,
     process_attachments,
+    run_docling,
 )
+from abstract_ranker.utils import ContributionData
 
 
 @pytest.mark.asyncio
@@ -59,7 +63,18 @@ async def test_insert_into_minirag_file_not_found():
 
 @pytest.mark.asyncio
 async def test_process_attachments(tmp_path: Path):
-    attachments = ["http://example.com/test1.pdf", "http://example.com/test2.pdf"]
+    contributions = [
+        ContributionData(
+            title="Test Contribution 1",
+            abstract="Abstract 1",
+            urls=["http://example.com/test1.pdf", "http://example.com/test1.txt"],
+        ),
+        ContributionData(
+            title="Test Contribution 2",
+            abstract="Abstract 2",
+            urls=["http://example.com/test2.pdf"],
+        ),
+    ]
     download_dir = Path(tmp_path)
     api_url = "http://example.com/api"
     with (
@@ -78,5 +93,80 @@ async def test_process_attachments(tmp_path: Path):
         mock_download.side_effect = lambda url, dir: dir / Path(url).name
         mock_docling.side_effect = lambda file: file.with_suffix(file.suffix + ".md")
         mock_insert.side_effect = lambda file, api: {"success": True}
-        results = await process_attachments(attachments, download_dir, api_url)
-        assert all(result["success"] for result in results)
+        results = await process_attachments(contributions, download_dir, api_url)
+        assert all("success" in result["results"][0] for result in results)  # type: ignore
+
+
+@pytest.mark.asyncio
+async def test_process_attachments_concurrency_limits(tmp_path: Path):
+    contributions = [
+        ContributionData(
+            title="Test Contribution 1",
+            abstract="Abstract 1",
+            urls=["http://example.com/test1.pdf"],
+        ),
+        ContributionData(
+            title="Test Contribution 2",
+            abstract="Abstract 2",
+            urls=["http://example.com/test2.pdf"],
+        ),
+        ContributionData(
+            title="Test Contribution 3",
+            abstract="Abstract 3",
+            urls=["http://example.com/test3.pdf"],
+        ),
+    ]
+    download_dir = Path(tmp_path)
+    api_url = "http://example.com/api"
+
+    download_locks = []
+    docling_locks = []
+    ingest_locks = []
+
+    async def mock_download_attachment(*args, **kwargs):
+        lock = asyncio.Lock()
+        download_locks.append(lock)
+        async with lock:
+            await asyncio.sleep(0.1)
+        return download_dir / "mock.pdf"
+
+    async def mock_run_docling(*args, **kwargs):
+        lock = asyncio.Lock()
+        docling_locks.append(lock)
+        async with lock:
+            await asyncio.sleep(0.1)
+        return Path("mock.md")
+
+    async def mock_insert_into_minirag(*args, **kwargs):
+        lock = asyncio.Lock()
+        ingest_locks.append(lock)
+        async with lock:
+            await asyncio.sleep(0.1)
+        return {"success": True}
+
+    with (
+        patch(
+            "abstract_ranker.minirag_ingester.download_attachment",
+            new=mock_download_attachment,
+        ),
+        patch("abstract_ranker.minirag_ingester.run_docling", new=mock_run_docling),
+        patch(
+            "abstract_ranker.minirag_ingester.insert_into_minirag",
+            new=mock_insert_into_minirag,
+        ),
+    ):
+        await process_attachments(contributions, download_dir, api_url)
+
+    # Verify concurrency limits
+    assert len(download_locks) == 3
+    assert len(docling_locks) == 3
+    assert len(ingest_locks) == 3
+
+    # Ensure only one download lock was active at a time
+    assert all(not lock.locked() for lock in download_locks)
+
+    # Ensure at most two docling locks were active at a time
+    assert sum(lock.locked() for lock in docling_locks) <= 2
+
+    # Ensure only one ingest lock was active at a time
+    assert all(not lock.locked() for lock in ingest_locks)
