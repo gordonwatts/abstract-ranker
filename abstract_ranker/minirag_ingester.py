@@ -153,6 +153,8 @@ async def insert_into_minirag(
     with cache_file.open("w") as f:
         json.dump(cache, f)
 
+    logging.info(f"Successfully inserted {markdown_file.name} into minirag.")
+
     return result
 
 
