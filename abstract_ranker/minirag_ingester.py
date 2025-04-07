@@ -54,7 +54,7 @@ async def run_docling(file_path: Path) -> Path:
         deactivate
         {shutil.which("powershell")} -Command "& {{
             C:\\Users\\gordo\\Code\\llm\\docling-experiments\\.venv\\Scripts\\activate.ps1
-            docling '{file_path}' --output '{output_file.parent}'
+            docling --image-export-mode placeholder '{file_path}' --output '{output_file.parent}'
         }}"
         """
         temp_ps1.write(ps1_content.encode())
