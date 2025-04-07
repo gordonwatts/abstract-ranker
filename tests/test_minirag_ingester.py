@@ -2,7 +2,6 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-import aiofiles
 import pytest
 
 from abstract_ranker.minirag_ingester import (
@@ -56,6 +55,7 @@ async def test_download_attachment_skips_existing_file(tmp_path: Path):
         mock_response = AsyncMock()
         mock_response.read.return_value = b"PDF content"
         mock_response.return_value = mock_response
+        mock_get.return_value = mock_response
 
         file_path = await download_attachment(attachment_url, download_dir)
         assert file_path.exists()
