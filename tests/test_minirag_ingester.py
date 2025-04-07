@@ -2,6 +2,7 @@ import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
+import aiofiles
 import pytest
 
 from abstract_ranker.minirag_ingester import (
@@ -54,7 +55,7 @@ async def test_download_attachment_skips_existing_file(tmp_path: Path):
     with patch("aiohttp.ClientSession.get", new_callable=AsyncMock) as mock_get:
         mock_response = AsyncMock()
         mock_response.read.return_value = b"PDF content"
-        mock_get.return_value = mock_response
+        mock_response.return_value = mock_response
 
         file_path = await download_attachment(attachment_url, download_dir)
         assert file_path.exists()
@@ -260,3 +261,17 @@ async def test_process_attachments_concurrency_limits(tmp_path: Path):
 
     # Ensure only one ingest lock was active at a time
     assert all(not lock.locked() for lock in ingest_locks)
+
+
+@pytest.mark.asyncio
+async def test_insert_into_minirag_utf8_file_reads_utf8_encoding() -> None:
+    markdown_file = Path("./tests/data/CONNIE_ESPP2026.md")
+    api_url = "http://example.com/api"
+
+    with patch("aiohttp.ClientSession.post", new_callable=AsyncMock) as mock_post:
+        mock_response = AsyncMock()
+        mock_response.json.return_value = {"success": True}
+        mock_response.raise_for_status = lambda: None
+        mock_post.return_value = mock_response
+
+        await insert_into_minirag("title", "abstract", markdown_file, api_url)

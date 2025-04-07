@@ -116,6 +116,7 @@ async def insert_into_minirag(
     # Insert the title and abstract
     async with aiohttp.ClientSession() as session:
         title_abstract_text = f"# {title}\n\n## Abstract\n{abstract}"
+        logging.debug(f"Inserting title and abstract for {markdown_file_name}.")
         response = await session.post(
             f"{api_url}/documents/text",
             headers={"Content-Type": "application/json"},
@@ -125,11 +126,14 @@ async def insert_into_minirag(
             },
         )
         result = await response.json()
-        logging.debug(f"Response from inserting title and abstract: {result}")
+        logging.debug(
+            f"Response from inserting title and abstract: {response.status} - {result}"
+        )
         response.raise_for_status()
 
         # Next, insert the markdown file itself
-        async with aiofiles.open(markdown_file, "r") as file:
+        logging.debug(f"Inserting content for {markdown_file_name}.")
+        async with aiofiles.open(markdown_file, "r", encoding="utf-8") as file:
             content = await file.read()
             form_data = aiohttp.FormData()
             form_data.add_field("file", content, filename=markdown_file_name)
@@ -139,7 +143,9 @@ async def insert_into_minirag(
 
             response = await session.post(f"{api_url}/documents/file", data=form_data)
             result = await response.json()
-            logging.debug(f"Response from inserting markdown file: {result}")
+            logging.debug(
+                f"Response from inserting markdown file: {response.status} - {result}"
+            )
             response.raise_for_status()
 
     # Update the cache
