@@ -29,8 +29,8 @@ def main(
 
     # Load what we need - late loading so command processing is fast
     from abstract_ranker.indico import indico_contributions, load_indico_json
-    from .utils import convert_contribution_to_data
-    from .minirag_ingester import process_attachments
+    from abstract_ranker.utils import convert_contribution_to_data
+    from abstract_ranker.minirag_ingester import process_attachments
 
     # Next, download the list of contributions
     indico_data = load_indico_json(indico_url)
@@ -51,7 +51,7 @@ def main(
 
     # Use asyncio to call the async function
     asyncio.run(
-        process_attachments(contribution_data, download_dir, "https://hi-there")
+        process_attachments(contribution_data, download_dir, "http://localhost:9721")
     )
 
 
