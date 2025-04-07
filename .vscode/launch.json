@@ -7,7 +7,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/abstract_ranker/conference_chat.py",
             "args": [
-                "https://indico.cern.ch/event/1"
+                "https://indico.cern.ch/event/1439855"
             ],
             "console": "integratedTerminal"
         }
