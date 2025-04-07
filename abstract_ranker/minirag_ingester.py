@@ -171,28 +171,25 @@ async def process_attachments(
     async def process_single_contribution(
         contribution: ContributionData,
     ) -> Dict[str, Union[str, List[str], bool]]:
-        try:
-            results = []
-            for attachment_url in contribution.urls:
-                async with download_semaphore:
-                    file_path = await download_attachment(attachment_url, download_dir)
+        results = []
+        for attachment_url in contribution.urls:
+            async with download_semaphore:
+                file_path = await download_attachment(attachment_url, download_dir)
 
-                async with docling_semaphore:
-                    markdown_file = await run_docling(file_path)
+            async with docling_semaphore:
+                markdown_file = await run_docling(file_path)
 
-                async with ingest_semaphore:
-                    result = await insert_into_minirag(
-                        contribution.title,
-                        contribution.abstract,
-                        markdown_file,
-                        api_url,
-                    )
+            async with ingest_semaphore:
+                result = await insert_into_minirag(
+                    contribution.title,
+                    contribution.abstract,
+                    markdown_file,
+                    api_url,
+                )
 
-                results.append(result)
+            results.append(result)
 
-            return {"title": contribution.title, "results": results}
-        except Exception as e:
-            return {"error": str(e)}
+        return {"title": contribution.title, "results": results}
 
     return await asyncio.gather(
         *(process_single_contribution(contribution) for contribution in contributions)

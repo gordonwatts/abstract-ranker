@@ -275,3 +275,36 @@ async def test_insert_into_minirag_utf8_file_reads_utf8_encoding() -> None:
         mock_post.return_value = mock_response
 
         await insert_into_minirag("title", "abstract", markdown_file, api_url)
+
+
+@pytest.mark.asyncio
+async def test_process_attachments_propagates_exceptions(tmp_path: Path):
+    contributions = [
+        ContributionData(
+            title="Test Contribution 1",
+            abstract="Abstract 1",
+            urls=["http://example.com/test1.pdf"],
+        )
+    ]
+    download_dir = Path(tmp_path)
+    api_url = "http://example.com/api"
+
+    async def mock_run_docling(*args, **kwargs):
+        raise RuntimeError("Test exception from run_docling")
+
+    with (
+        patch(
+            "abstract_ranker.minirag_ingester.download_attachment",
+            new_callable=AsyncMock,
+        ) as mock_download,
+        patch("abstract_ranker.minirag_ingester.run_docling", new=mock_run_docling),
+        patch(
+            "abstract_ranker.minirag_ingester.insert_into_minirag",
+            new_callable=AsyncMock,
+        ) as mock_insert,
+    ):
+        mock_download.side_effect = lambda url, dir: dir / Path(url).name
+        mock_insert.side_effect = lambda title, abstract, file, api: {"success": True}
+
+        with pytest.raises(RuntimeError, match="Test exception from run_docling"):
+            await process_attachments(contributions, download_dir, api_url)
