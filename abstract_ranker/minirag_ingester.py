@@ -110,11 +110,17 @@ async def insert_into_minirag(
     # Check if the file has already been processed
     markdown_file_name = markdown_file.name
     if markdown_file_name in cache:
-        logging.info(f"Skipping insertion for {markdown_file_name}, already processed.")
+        logging.info(f"Skipping insertion for '{title}', already processed.")
         return cache[markdown_file_name]
+    file_size_kb = markdown_file.stat().st_size / 1024
+    logging.info(
+        f"Starting insertion of '{title}' into minirag. File size: {file_size_kb:.2f} KB."
+    )
 
     # Insert the title and abstract
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(
+        timeout=aiohttp.ClientTimeout(total=None)
+    ) as session:
         title_abstract_text = f"# {title}\n\n## Abstract\n{abstract}"
         logging.debug(f"Inserting title and abstract for {markdown_file_name}.")
         response = await session.post(
@@ -153,7 +159,7 @@ async def insert_into_minirag(
     with cache_file.open("w") as f:
         json.dump(cache, f)
 
-    logging.info(f"Successfully inserted {markdown_file.name} into minirag.")
+    logging.info(f"Successfully inserted '{title}' into minirag.")
 
     return result
 
