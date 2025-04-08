@@ -24,6 +24,9 @@ def main(
     skip_minirag_injection: bool = typer.Option(
         False, "--skip-minirag-injection", help="Skip injection into minirag"
     ),
+    max_files: int = typer.Option(
+        None, "--max-files", help="Maximum number of files to send to the RAG system"
+    ),
 ):
     """Process a URL to an Indico conference endpoint."""
     verbose = int(verbose)  # Ensure verbose is an integer
@@ -46,6 +49,10 @@ def main(
         convert_contribution_to_data(contrib) for contrib in contributions
     ]
 
+    # Apply max_files limit if specified
+    if max_files is not None:
+        contribution_data = contribution_data[:max_files]
+
     # Create a download directory in our temp directory based on the conference name.
     conference_name = indico_data["title"].replace(" ", "_")
     temp_dir = tempfile.gettempdir()
@@ -57,7 +64,8 @@ def main(
         process_attachments(
             contribution_data,
             download_dir,
-            "http://localhost:9721",
+            "http://localhost:9621",  # light rag
+            # "http://localhost:9721", # mini rag
             skip_injection=skip_minirag_injection,
         )
     )
