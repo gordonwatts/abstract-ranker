@@ -21,6 +21,9 @@ def setup_logging(verbose: int):
 def main(
     indico_url: str = typer.Argument(..., help="URL to an Indico conference endpoint"),
     verbose: int = typer.Option(0, "-v", "--verbose", count=True, min=0, max=2),
+    skip_minirag_injection: bool = typer.Option(
+        False, "--skip-minirag-injection", help="Skip injection into minirag"
+    ),
 ):
     """Process a URL to an Indico conference endpoint."""
     verbose = int(verbose)  # Ensure verbose is an integer
@@ -51,7 +54,12 @@ def main(
 
     # Use asyncio to call the async function
     asyncio.run(
-        process_attachments(contribution_data, download_dir, "http://localhost:9721")
+        process_attachments(
+            contribution_data,
+            download_dir,
+            "http://localhost:9721",
+            skip_injection=skip_minirag_injection,
+        )
     )
 
 

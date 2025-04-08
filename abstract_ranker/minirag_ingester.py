@@ -165,7 +165,10 @@ async def insert_into_minirag(
 
 
 async def process_attachments(
-    contributions: List[ContributionData], download_dir: Path, api_url: str
+    contributions: List[ContributionData],
+    download_dir: Path,
+    api_url: str,
+    skip_injection: bool = False,  # New parameter to skip injection into minirag
 ) -> List[Dict[str, Union[str, List[str], bool]]]:
     """Process a list of contributions asynchronously with concurrency limits."""
     download_dir.mkdir(parents=True, exist_ok=True)
@@ -185,15 +188,16 @@ async def process_attachments(
             async with docling_semaphore:
                 markdown_file = await run_docling(file_path)
 
-            async with ingest_semaphore:
-                result = await insert_into_minirag(
-                    contribution.title,
-                    contribution.abstract,
-                    markdown_file,
-                    api_url,
-                )
+            if not skip_injection:  # Skip injection if the flag is set
+                async with ingest_semaphore:
+                    result = await insert_into_minirag(
+                        contribution.title,
+                        contribution.abstract,
+                        markdown_file,
+                        api_url,
+                    )
 
-            results.append(result)
+                results.append(result)
 
         return {"title": contribution.title, "results": results}
 

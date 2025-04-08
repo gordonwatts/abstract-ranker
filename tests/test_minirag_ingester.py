@@ -308,3 +308,45 @@ async def test_process_attachments_propagates_exceptions(tmp_path: Path):
 
         with pytest.raises(RuntimeError, match="Test exception from run_docling"):
             await process_attachments(contributions, download_dir, api_url)
+
+
+@pytest.mark.asyncio
+async def test_process_attachments_skip_injection(tmp_path: Path):
+    contributions = [
+        ContributionData(
+            title="Test Contribution 1",
+            abstract="Abstract 1",
+            urls=["http://example.com/test1.pdf"],
+        )
+    ]
+    download_dir = Path(tmp_path)
+    api_url = "http://example.com/api"
+
+    with (
+        patch(
+            "abstract_ranker.minirag_ingester.download_attachment",
+            new_callable=AsyncMock,
+        ) as mock_download,
+        patch(
+            "abstract_ranker.minirag_ingester.run_docling", new_callable=AsyncMock
+        ) as mock_docling,
+        patch(
+            "abstract_ranker.minirag_ingester.insert_into_minirag",
+            new_callable=AsyncMock,
+        ) as mock_insert,
+    ):
+        mock_download.side_effect = lambda url, dir: dir / Path(url).name
+        mock_docling.side_effect = lambda file: file.with_suffix(".md")
+
+        # Call process_attachments with skip_injection=True
+        results = await process_attachments(
+            contributions, download_dir, api_url, skip_injection=True
+        )
+
+        # Validate the structure and content of the results
+        assert len(results) == 1
+        assert results[0]["title"] == "Test Contribution 1"
+        assert results[0]["results"] == []  # No injection results
+
+        # Ensure insert_into_minirag was not called
+        mock_insert.assert_not_called()
