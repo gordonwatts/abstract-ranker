@@ -50,6 +50,7 @@ packages = ["abstract_ranker"]
 test = ["pytest", "pytest-asyncio", "black", "flake8"]
 # Use 'ml' this for running things like phi3-small (need linux!).
 ml = ['einops', 'flash-attn', 'tiktoken==0.6.0', 'transformers[torch]']
+webui = ['streamlit']
 
 [project.scripts]
 abstract_ranker = "abstract_ranker.ranker:main"
