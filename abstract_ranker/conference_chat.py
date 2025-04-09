@@ -18,7 +18,7 @@ def setup_logging(verbose: int):
 
 
 @app.command()
-def main(
+def ingest(
     indico_url: str = typer.Argument(..., help="URL to an Indico conference endpoint"),
     verbose: int = typer.Option(0, "-v", "--verbose", count=True, min=0, max=2),
     skip_minirag_injection: bool = typer.Option(
@@ -28,7 +28,7 @@ def main(
         None, "--max-files", help="Maximum number of files to send to the RAG system"
     ),
 ):
-    """Process a URL to an Indico conference endpoint."""
+    """Ingest all contributions from an indico conference into a RAG server."""
     verbose = int(verbose)  # Ensure verbose is an integer
     setup_logging(verbose)
     logging.debug(f"Processing URL: {indico_url}")
@@ -69,6 +69,22 @@ def main(
             skip_injection=skip_minirag_injection,
         )
     )
+
+
+@app.command()
+def webui():
+    """Launch the Web UI to chat with the conference database."""
+    import subprocess
+    from pathlib import Path
+
+    # Get the path to the current file (conference_chat.py)
+    current_file_path = Path(__file__).resolve()
+
+    # Determine the path to conference_chat_streamlit.py relative to this file
+    streamlit_file_path = current_file_path.parent / "conference_chat_streamlit.py"
+
+    # Run the Streamlit command
+    subprocess.run(["streamlit", "run", str(streamlit_file_path)])
 
 
 if __name__ == "__main__":

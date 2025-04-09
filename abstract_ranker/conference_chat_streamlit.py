@@ -1,3 +1,4 @@
+import logging
 from typing import List
 import streamlit as st
 import time
@@ -54,7 +55,7 @@ def fetch_rag_documents(question: str):
 
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code == 200:
-        print(response.json())
+        logging.debug(response.json())
         return response.json()["response"]
     else:
         response.raise_for_status()
@@ -150,7 +151,7 @@ if st.button("Submit", key="submit_button"):
                 status_placeholder.text("Refining question...")
                 query_text = refine_question(query_text, history)
                 chat_container.write(f"Refined question: {query_text}")
-                print(f"refined question: {query_text}")
+                logging.debug(f"refined question: {query_text}")
 
             time.sleep(1)  # Simulate phase 1
 
