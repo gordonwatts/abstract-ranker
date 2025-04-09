@@ -1,6 +1,8 @@
 import streamlit as st
 import time
 import requests
+import openai
+from abstract_ranker.openai_utils import get_key
 
 
 def refine_question(question: str, history) -> str:
@@ -17,13 +19,46 @@ def fetch_rag_documents(question: str):
     response = requests.post(url, json=payload, headers=headers)
     if response.status_code == 200:
         print(response.json())
-        return response.json()
+        return response.json()["response"]
     else:
         response.raise_for_status()
 
 
 def write_answer(question: str, documents):
-    return "42"
+    """
+    Use OpenAI GPT-4o to answer the question based on the provided documents.
+    """
+    # Prepare the prompt for GPT-4o
+    prompt = f"""
+    Answer the following question based on the provided documents:
+
+    Question: {question}
+
+    Documents:
+    {documents}
+
+    Provide a concise and accurate answer.
+    """
+
+    # Call OpenAI GPT-4o API
+    try:
+        openai_client = openai.OpenAI(api_key=get_key())
+        response = openai_client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in particle physics and a helpful assistant "
+                    "who answers questions accurately and concisely.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        # Extract and return the answer from the response
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"An error occurred while generating the answer: {str(e)}"
 
 
 # Set up the Streamlit page
