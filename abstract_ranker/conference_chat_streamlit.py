@@ -1,3 +1,4 @@
+from typing import List
 import streamlit as st
 import time
 import requests
@@ -7,6 +8,39 @@ from abstract_ranker.openai_utils import get_key
 
 def refine_question(question: str, history) -> str:
     "Use a LLM to refine the question given the history of the conversation."
+    prompt = f"""
+    Below is a question the user is asking. Generate a query that can be used to
+    search for relevant documents to answer the user's question. Use prior conversation
+    history to make the question unambiguous.
+
+    User Question: {question}
+
+    Prior user and LLM conversation:
+    {"\n".join(history)}
+
+    Provide a good document search query to be used in a vector database lookup.
+    """
+
+    # Call OpenAI GPT-4o API
+    try:
+        openai_client = openai.OpenAI(api_key=get_key())
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert in particle physics and a helpful assistant "
+                    "who answers questions accurately and concisely.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+        )
+
+        # Extract and return the answer from the response
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"An error occurred while generating the answer: {str(e)}"
+
     return question
 
 
@@ -26,20 +60,24 @@ def fetch_rag_documents(question: str):
         response.raise_for_status()
 
 
-def write_answer(question: str, documents):
+def write_answer(question: str, history: List[str], documents: str):
     """
     Use OpenAI GPT-4o to answer the question based on the provided documents.
     """
     # Prepare the prompt for GPT-4o
     prompt = f"""
-    Answer the following question based on the provided documents:
+    Answer the following question based on recent conversation history with the user and documents
+    that should be relevant to the question.
 
     Question: {question}
 
-    Documents:
+    Conversation History:
+    {"\n".join(history)}
+
+    Reference Documents:
     {documents}
 
-    Provide a concise and accurate answer.
+    Provide an accurate answer.
     """
 
     # Call OpenAI GPT-4o API
@@ -104,13 +142,15 @@ if st.button("Submit", key="submit_button"):
         # Show spinner and update status messages dynamically
         with st.spinner("Processing your question...", show_time=True):
 
+            # Consider only the last 10 responses or so.
+            history = st.session_state["chat_history"][:10]
+
             # Refine question if we have history to use.
-            if len(st.session_state["chat_history"]) > 0:
+            if len(st.session_state["chat_history"]) > 1:
                 status_placeholder.text("Refining question...")
-                query_text = refine_question(
-                    query_text, st.session_state["chat_history"]
-                )
+                query_text = refine_question(query_text, history)
                 chat_container.write(f"Refined question: {query_text}")
+                print(f"refined question: {query_text}")
 
             time.sleep(1)  # Simulate phase 1
 
@@ -120,7 +160,7 @@ if st.button("Submit", key="submit_button"):
 
             # Use LLM to write answer.
             status_placeholder.text("Writing answer...")
-            llm_response = write_answer(query_text, documents)
+            llm_response = write_answer(user_input, history, documents)
             st.session_state["chat_history"].append(f"LLM: {llm_response}")
 
         # Clear the status message
