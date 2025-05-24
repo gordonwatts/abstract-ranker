@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import re
-import shutil
 import subprocess
 import tempfile
 import json
@@ -12,7 +11,6 @@ import aiofiles
 import aiohttp
 
 from abstract_ranker.utils import ContributionData
-import hashlib
 
 
 async def download_attachment(
@@ -60,23 +58,13 @@ async def run_docling(file_path: Path) -> Path:
     logging.debug(f"Preparing to run docling on {file_path}")
 
     # Create a temporary PowerShell script
-    temp_ps1 = tempfile.NamedTemporaryFile(delete=False, suffix=".ps1")
     try:
-        # ps1_content = f"""
-        # deactivate
-        # {shutil.which("powershell")} -Command "& {{
-        #     C:\\Users\\gordo\\Code\\llm\\docling-experiments\\.venv\\Scripts\\activate.ps1
-        #     docling --image-export-mode placeholder '{file_path}' --output '{output_file.parent}'
-        # }}"
-        # """
-        # temp_ps1.write(ps1_content.encode())
-        # temp_ps1.close()
-
-        # Run the PowerShell script
+        # Run the docling command using a subprocess
         process = await asyncio.create_subprocess_exec(
             "bash",
             "-c",
-            f'uvx docling --image-export-mode placeholder "{file_path}" --output "{output_file.parent}"',
+            f'uvx docling --image-export-mode placeholder "{file_path}" --output '
+            f'"{output_file.parent}"',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
