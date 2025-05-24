@@ -58,6 +58,7 @@ def ingest(
     temp_dir = tempfile.gettempdir()
     download_dir = Path(temp_dir) / "conference_chat" / conference_name
     download_dir.mkdir(parents=True, exist_ok=True)
+    logging.info(f"Location of files will be: {download_dir}")
 
     # Use asyncio to call the async function
     asyncio.run(
