@@ -4,7 +4,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import urllib.parse
 import json
 from pathlib import Path
 from typing import Dict, List, Union
@@ -13,20 +12,33 @@ import aiofiles
 import aiohttp
 
 from abstract_ranker.utils import ContributionData
+import hashlib
 
 
-async def download_attachment(attachment_url: str, download_dir: Path) -> Path:
+async def download_attachment(
+    attachment_url: str, download_dir: Path, title: str
+) -> Path:
     """Download an attachment from a URL asynchronously."""
-    # Decode URL and sanitize filename
-    decoded_url = urllib.parse.unquote(attachment_url)
-    sanitized_name = re.sub(r'[<>:"/\\|?*]', "", Path(decoded_url).name)
+    # Sanitize filename
+    sanitized_name = re.sub(r'[<>:"/\\|?*]', "", title)
     final_filename = download_dir / sanitized_name
 
     # Skip download if file already exists
-    if final_filename.exists():
-        return final_filename
+    checked = False
+    while not checked:
+        try:
+            if final_filename.exists():
+                return final_filename
+            checked = True
+        except OSError as e:
+            if "File name too long" in str(e):
+                final_filename = final_filename.with_name(
+                    " ".join(final_filename.name.split(" ")[0:-1])
+                )
+                if len(final_filename.name) == 0:
+                    raise ValueError(f"Can't build short filename for {title}")
 
-    temp_filename = download_dir / f"{sanitized_name}-download"
+    temp_filename = download_dir / f"{hash(sanitized_name)}-download"
 
     async with aiohttp.ClientSession() as session:
         response = await session.get(attachment_url)
@@ -50,23 +62,21 @@ async def run_docling(file_path: Path) -> Path:
     # Create a temporary PowerShell script
     temp_ps1 = tempfile.NamedTemporaryFile(delete=False, suffix=".ps1")
     try:
-        ps1_content = f"""
-        deactivate
-        {shutil.which("powershell")} -Command "& {{
-            C:\\Users\\gordo\\Code\\llm\\docling-experiments\\.venv\\Scripts\\activate.ps1
-            docling --image-export-mode placeholder '{file_path}' --output '{output_file.parent}'
-        }}"
-        """
-        temp_ps1.write(ps1_content.encode())
-        temp_ps1.close()
+        # ps1_content = f"""
+        # deactivate
+        # {shutil.which("powershell")} -Command "& {{
+        #     C:\\Users\\gordo\\Code\\llm\\docling-experiments\\.venv\\Scripts\\activate.ps1
+        #     docling --image-export-mode placeholder '{file_path}' --output '{output_file.parent}'
+        # }}"
+        # """
+        # temp_ps1.write(ps1_content.encode())
+        # temp_ps1.close()
 
         # Run the PowerShell script
         process = await asyncio.create_subprocess_exec(
-            "powershell",
-            "-ExecutionPolicy",
-            "Bypass",
-            "-File",
-            temp_ps1.name,
+            "bash",
+            "-c",
+            f'uvx docling --image-export-mode placeholder "{file_path}" --output "{output_file.parent}"',
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -77,7 +87,7 @@ async def run_docling(file_path: Path) -> Path:
                 f"Docling failed with return code {process.returncode}.\nSTDOUT: {stdout.decode()}"
                 f"\nSTDERR: {stderr.decode()}"
             )
-            raise subprocess.CalledProcessError(process.returncode, "powershell")
+            raise subprocess.CalledProcessError(process.returncode, "docling")
         if not output_file.exists():
             raise RuntimeError(
                 f"The output file {output_file} was not created by the docling command."
@@ -85,7 +95,8 @@ async def run_docling(file_path: Path) -> Path:
         logging.info(f"Successfully generated markdown file: {output_file}")
     finally:
         # Clean up the temporary PowerShell script
-        Path(temp_ps1.name).unlink(missing_ok=True)
+        # Path(temp_ps1.name).unlink(missing_ok=True)
+        pass
 
     return output_file
 
@@ -181,9 +192,14 @@ async def process_attachments(
         contribution: ContributionData,
     ) -> Dict[str, Union[str, List[str], bool]]:
         results = []
-        for attachment_url in contribution.urls:
+        for i, attachment_url in enumerate(contribution.urls):
+            title = contribution.title
+            if i > 0:
+                title = f"{title} - document {i}"
             async with download_semaphore:
-                file_path = await download_attachment(attachment_url, download_dir)
+                file_path = await download_attachment(
+                    attachment_url, download_dir, title
+                )
 
             async with docling_semaphore:
                 markdown_file = await run_docling(file_path)
