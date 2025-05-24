@@ -18,7 +18,7 @@ async def download_attachment(
 ) -> Path:
     """Download an attachment from a URL asynchronously."""
     # Sanitize filename
-    sanitized_name = re.sub(r'[<>:"/\\|?*]', "", title)
+    sanitized_name = re.sub(r'[<>:"/\\|?*$]', "", title)
     final_filename = download_dir / sanitized_name
 
     # Skip download if file already exists
@@ -75,7 +75,9 @@ async def run_docling(file_path: Path) -> Path:
                 f"Docling failed with return code {process.returncode}.\nSTDOUT: {stdout.decode()}"
                 f"\nSTDERR: {stderr.decode()}"
             )
-            raise subprocess.CalledProcessError(process.returncode, "docling")
+            raise subprocess.CalledProcessError(
+                process.returncode, "docling {file_path}"
+            )
         if not output_file.exists():
             raise RuntimeError(
                 f"The output file {output_file} was not created by the docling command."
