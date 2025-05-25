@@ -11,15 +11,25 @@ import aiofiles
 import aiohttp
 
 from abstract_ranker.utils import ContributionData
+from urllib.parse import urlparse, unquote
 
 
 async def download_attachment(
     attachment_url: str, download_dir: Path, title: str
 ) -> Path:
     """Download an attachment from a URL asynchronously."""
+    # Extract filename from URL
+    parsed_url = urlparse(attachment_url)
+    filename = Path(unquote(parsed_url.path)).name
+    if not filename:
+        logging.warning(
+            f"Filename for URL '{attachment_url}' could not be determined ('{title}')."
+        )
+        filename = "downloaded_file"
+
     # Sanitize filename
     sanitized_name = re.sub(r'[<>:"/\\|?*$]', "", title)
-    final_filename = download_dir / sanitized_name
+    final_filename = (download_dir / sanitized_name).with_suffix(Path(filename).suffix)
 
     # Skip download if file already exists
     checked = False
@@ -30,8 +40,14 @@ async def download_attachment(
             checked = True
         except OSError as e:
             if "File name too long" in str(e):
+                stem = final_filename.stem
+                parts = stem.split(" ")
+                if len(parts) > 1:
+                    new_stem = " ".join(parts[:-1])
+                else:
+                    new_stem = stem[:-1]  # Remove last character if only one word
                 final_filename = final_filename.with_name(
-                    " ".join(final_filename.name.split(" ")[0:-1])
+                    new_stem + final_filename.suffix
                 )
                 if len(final_filename.name) == 0:
                     raise ValueError(f"Can't build short filename for {title}")
