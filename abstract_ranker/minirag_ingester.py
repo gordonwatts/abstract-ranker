@@ -96,7 +96,7 @@ async def run_docling(file_path: Path) -> Path:
             )
         if not output_file.exists():
             raise RuntimeError(
-                f"The output file {output_file} was not created by the docling command."
+                f"The output file '{output_file}' was not created by the docling command."
             )
         logging.info(f"Successfully generated markdown file: {output_file}")
     finally:
