@@ -2,10 +2,9 @@ import asyncio
 import logging
 import re
 import subprocess
-import tempfile
 import json
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 import aiofiles
 import aiohttp
@@ -16,7 +15,7 @@ from urllib.parse import urlparse, unquote
 
 async def download_attachment(
     attachment_url: str, download_dir: Path, title: str
-) -> Path:
+) -> Optional[Path]:
     """Download an attachment from a URL asynchronously."""
     # Extract filename from URL
     parsed_url = urlparse(attachment_url)
@@ -27,9 +26,28 @@ async def download_attachment(
         )
         filename = "downloaded_file"
 
+    # Skip zip files, tar files, gzip files, etc.
+    file_suffix = Path(filename).suffix
+    if file_suffix.lower() in {
+        ".zip",
+        ".tar",
+        ".gz",
+        ".tar.gz",
+        ".tgz",
+        ".tar.bz2",
+        ".tar.xz",
+        ".rar",
+        ".7z",
+    }:
+        logging.warning(
+            f"Skipping download of '{filename}' from '{attachment_url}' "
+            "due to unsupported file type."
+        )
+        return None
+
     # Sanitize filename
     sanitized_name = re.sub(r'[<>:"/\\|?*$]', "", title)
-    final_filename = (download_dir / sanitized_name).with_suffix(Path(filename).suffix)
+    final_filename = (download_dir / sanitized_name).with_suffix(file_suffix)
 
     # Skip download if file already exists
     checked = False
@@ -207,19 +225,20 @@ async def process_attachments(
                     attachment_url, download_dir, title
                 )
 
-            async with docling_semaphore:
-                markdown_file = await run_docling(file_path)
+            if file_path is not None:
+                async with docling_semaphore:
+                    markdown_file = await run_docling(file_path)
 
-            if not skip_injection:  # Skip injection if the flag is set
-                async with ingest_semaphore:
-                    result = await insert_into_minirag(
-                        contribution.title,
-                        contribution.abstract,
-                        markdown_file,
-                        api_url,
-                    )
+                if not skip_injection:  # Skip injection if the flag is set
+                    async with ingest_semaphore:
+                        result = await insert_into_minirag(
+                            contribution.title,
+                            contribution.abstract,
+                            markdown_file,
+                            api_url,
+                        )
 
-                results.append(result)
+                    results.append(result)
 
         return {"title": contribution.title, "results": results}
 
