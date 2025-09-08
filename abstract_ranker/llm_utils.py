@@ -44,6 +44,8 @@ _llm_dispatch: Dict[str, Callable[[str, Dict[Any, Any]], AbstractLLMResponse]] =
     "GPT35Turbo": lambda prompt, context: local_query_gpt(
         prompt, context, "gpt-3.5-turbo"
     ),
+    "GPT5Mini": lambda prompt, context: local_query_gpt(prompt, context, "gpt-5-mini"),
+    "GPT5": lambda prompt, context: local_query_gpt(prompt, context, "gpt-5"),
     "phi3-mini": lambda prompt, context: local_query_hugging_face(
         prompt, context, "microsoft/Phi-3-mini-4k-instruct"
     ),
