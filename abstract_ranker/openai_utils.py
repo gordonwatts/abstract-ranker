@@ -66,8 +66,6 @@ def query_gpt(
                 f"{schema}",
             },
         ],
-        max_tokens=1000,
-        temperature=0.7,
         n=1,
         stop=None,
     )
@@ -139,8 +137,6 @@ def summarize_gpt(prompt: str, context: Dict[str, str | List[str]], model: str) 
             {"role": "user", "content": prompt},
             {"role": "user", "content": c_text},
         ],
-        max_tokens=1000,
-        temperature=0.7,
         n=1,
         stop=None,
     )
