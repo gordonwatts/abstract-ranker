@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 CACHE_DIR = Path("./.abstract_cache")
 
 # Raw prompt for the LLM
@@ -18,6 +17,7 @@ interested_topics = [
     "Distributed computing for analysis (e.g. Dask, Spark, etc)",
     "Data Preservation and FAIR principles",
     "Differentiable Programming",
+    "Large Language Models and Agentic Analysis in particle physics",
 ]
 
 not_interested_topics = [

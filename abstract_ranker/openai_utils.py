@@ -36,7 +36,7 @@ def query_gpt(
             {
                 "role": "system",
                 "content": "You are a helpful assistant and expert in the field of experimental "
-                "particle physics. All responses must be in the JSON format specified.",
+                "particle physics. All responses must be in the JSON format specified. Your responses are short and to the point.",
             },
             {"role": "user", "content": prompt},
             {
@@ -66,8 +66,6 @@ def query_gpt(
                 f"{schema}",
             },
         ],
-        max_tokens=1000,
-        temperature=0.7,
         n=1,
         stop=None,
     )
@@ -134,13 +132,11 @@ def summarize_gpt(prompt: str, context: Dict[str, str | List[str]], model: str) 
             {
                 "role": "system",
                 "content": "You are a helpful assistant and expert in the field of experimental "
-                "particle physics and computational particle physics.",
+                "particle physics and computational particle physics. Your responses are short and to the point.",
             },
             {"role": "user", "content": prompt},
             {"role": "user", "content": c_text},
         ],
-        max_tokens=1000,
-        temperature=0.7,
         n=1,
         stop=None,
     )
